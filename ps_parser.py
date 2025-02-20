@@ -39,11 +39,26 @@ def get_players_score() -> dict[str, float]:
     for player, address in PLAYERS_ADRESSES.items():
         soup = url_to_soup(f"{BASE_OMEDA_ADRESS}{address}")
         try:
-            player_score = float(soup.find('span', string="Average PS:").find_next_sibling('span').text)
+            player_score = float(soup.find('span', string="Average PS:"
+            ).find_next_sibling('span').text)
         except AttributeError:
             player_score = 000.00
         
         players_score[player] = player_score
     
-    return players_score  
+    return players_score
+
+def make_score_prety(players_score : dict[str, float]) -> str:
+    prety_player_score : str = "Average PS"
+
+    for player, score in players_score.items():
+        prety_player_score += f"\n-{player:<15}:{score:>6}"
+    
+    return(prety_player_score)
+    
+def main():
+    print(make_score_prety(get_players_score()))
+
+if __name__ == "__main__":
+    main()
     
