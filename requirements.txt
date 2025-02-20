@@ -1,2 +1,5 @@
 pydantic-settings
 aiogram<4.0
+python-dotenv
+requests
+beautifulsoup4

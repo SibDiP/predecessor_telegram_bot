@@ -4,6 +4,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
 import os
 from dotenv import load_dotenv
+from ps_parser import get_players_score
 
 load_dotenv()
 
