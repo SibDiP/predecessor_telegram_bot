@@ -59,8 +59,7 @@ def sort_players_by_score(player_score: dict[str, float]) -> dict[str, float]:
 
 
 def make_score_prety(players_score : dict[str, float]) -> str:
-    title = "Average PS"
-    prety_player_score : str = f"{title.rjust(24, "\u2800")}"
+    prety_player_score = ""
     players_score = sort_players_by_score(players_score)
     medals = ("🏆", "🥈", "🥉", "🧑‍🌾", "🧑‍🦯",)
     medals_counter = 0
