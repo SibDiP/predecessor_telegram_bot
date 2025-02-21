@@ -30,7 +30,8 @@ def url_to_soup(url_address: str) -> object:
 
 def get_players_score() -> dict[str, float]:
     """
-    Get average ps value for players and return it as a dictioary
+    Get average ps value for players and return it as a dictioary with range 
+    by score
     :return dictianary {player : average_score_value}
     """
     player_score : float = None
@@ -52,9 +53,12 @@ def make_score_prety(players_score : dict[str, float]) -> str:
     prety_player_score : str = "Average PS"
 
     for player, score in players_score.items():
-        prety_player_score += f"\n-{player:<15}:{score:>6}"
+        if score < 100:
+            score = "".join(("0", str(score)))
+
+        prety_player_score += f"\n{score:>6} | {player:<15}"
     
-    return(prety_player_score)
+    return prety_player_score
     
 def main():
     print(make_score_prety(get_players_score()))
