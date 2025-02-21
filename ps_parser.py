@@ -49,9 +49,18 @@ def get_players_score() -> dict[str, float]:
     
     return players_score
 
+def sort_players_by_score(player_score: dict[str, float]) -> dict[str, float]:
+    """
+    Sort dictionary by score. From high to low.
+    """
+    sorted_scores = dict(sorted(
+        player_score.items(), key=lambda x: x[1], reverse=True))
+    return sorted_scores
+
+
 def make_score_prety(players_score : dict[str, float]) -> str:
     prety_player_score : str = "Average PS"
-
+    players_score = sort_players_by_score(players_score)
     for player, score in players_score.items():
         if score < 100:
             score = "".join(("0", str(score)))
