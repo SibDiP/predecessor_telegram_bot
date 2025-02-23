@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
+import ps_data_manager
 
 
 # Traced players. {nik_name : id}
@@ -75,7 +76,9 @@ def make_score_prety(players_score : dict[str, float]) -> str:
     return prety_player_score
     
 def main():
-    print(make_score_prety(get_players_score()))
+    #print(make_score_prety(get_players_score()))
+    ps_data_manager.ps_data_save(get_players_score())
+
 
 if __name__ == "__main__":
     main()
