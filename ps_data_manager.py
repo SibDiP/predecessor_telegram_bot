@@ -1,8 +1,16 @@
 import pandas as pd
 import logging
+import sqlite3
+from sqlalchemy import create_engine
 
-logging.basicConfig(level=logging.INFO)
+from datetime import datetime
+import players
+
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+PLAYERS_FOR_SQL = [k.replace(' ','_') for k in players.PLAYERS_ADRESSES.keys()]
+
 
 def convert_ps_to_pd_dataframe(players_score : dict[str, float]) -> pd.DataFrame:
     """
@@ -11,32 +19,57 @@ def convert_ps_to_pd_dataframe(players_score : dict[str, float]) -> pd.DataFrame
 
     return: pd.DataFrame
     """
-    df = pd.DataFrame(data=list(players_score.items()), columns=
-    [
-        "Player",
-        "Player Score"],
-        )
+
+    df = pd.DataFrame(data=players_score, index=[0])
+    df['date'] = datetime.now().strftime('%Y-%m-%d')
+    df = df.set_index('date')
 
     logger.debug(f"\n{df.to_string()}")
     logger.info("Create pandas DataFrame: Success")
 
     return df
 
-def write_df_to_csv(dataframe : pd.DataFrame, csv_name:str="by_weeks") -> None:
+def create_sql_database(sql_database : "str" = "ps_data.db") -> None:
     """
-    Write pd.DataFrame object to a .csv file.
+    Write pd.DataFrame object to .sqliete 
+    """
 
-    ::parameters::
-    dataframe : pd.DataFrame
-        The DataFrame to export.
-    csv_name : str
-        Name of the .csv file to export. Default is "by_weeks.csv".
-    """
-    dataframe.to_csv(csv_name, index=False)
-    logger.info(f"Saving data in {csv_name}.csv: Success")
+    connection = sqlite3.connect(sql_database)
+    coursor = connection.cursor()
+    
+    # Create table
+    coursor.execute(f'''
+    CREATE TABLE IF NOT EXISTS players_Score (
+    date TEXT PRIMARY KEY,
+    {", ".join([f"{player} REAL NOT NULL" 
+    for player in PLAYERS_FOR_SQL])}
+    )
+    ''')
+    
+    logger.info("SQLite database creating: Success")
 
-def read_df_from_csv(csv_name) -> pd.DataFrame:
-    """
-    Read pd.DataFrame object from .csv file
-    """
-    pass
+    # Save table
+    connection.commit()
+    connection.close()
+
+    return None
+
+
+def write_df_to_sql_database(dataframe : pd.DataFrame, 
+sql_database : "str"="ps_data.db",
+sql_database_table : "str"="players_score") -> None:
+    
+    if dataframe.empty:
+        logger.warning("DataFrame is empty. No data written to the database.")
+        return None
+    
+    engine = create_engine(f'sqlite:///{sql_database}', echo=False)
+    dataframe.to_sql(
+        sql_database_table, 
+        con=engine, 
+        index_label="date",
+        if_exists='append')
+
+    logger.info(f"DataFrame writting to {sql_database}: Succsess")
+
+    return None

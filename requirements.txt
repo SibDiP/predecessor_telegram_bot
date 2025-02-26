@@ -5,3 +5,5 @@ requests
 beautifulsoup4
 fake-useragent
 pandas
+sqlite3
+sqlalchemy
