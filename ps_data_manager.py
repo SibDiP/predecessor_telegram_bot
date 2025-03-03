@@ -1,7 +1,8 @@
+import os
 import pandas as pd
 import logging
 import sqlite3
-from sqlalchemy import create_engine
+import sqlalchemy
 
 from datetime import datetime
 import players
@@ -33,24 +34,26 @@ def create_sql_database(sql_database : "str" = "ps_data.db") -> None:
     """
     Write pd.DataFrame object to .sqliete 
     """
+    if os.path.isfile(sql_database):
+        logger.info(f"SQLite database creating: {sql_database} already exist")
+    else:
+        connection = sqlite3.connect(sql_database)
+        coursor = connection.cursor()
+        
+        # Create table
+        coursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS players_Score (
+        date TEXT PRIMARY KEY,
+        {", ".join([f"{player} REAL NOT NULL" 
+        for player in PLAYERS_FOR_SQL])}
+        )
+        ''')
+        
+        logger.info(f"SQLite database {sql_database} creating: Success")
 
-    connection = sqlite3.connect(sql_database)
-    coursor = connection.cursor()
-    
-    # Create table
-    coursor.execute(f'''
-    CREATE TABLE IF NOT EXISTS players_Score (
-    date TEXT PRIMARY KEY,
-    {", ".join([f"{player} REAL NOT NULL" 
-    for player in PLAYERS_FOR_SQL])}
-    )
-    ''')
-    
-    logger.info("SQLite database creating: Success")
-
-    # Save table
-    connection.commit()
-    connection.close()
+        # Save table
+        connection.commit()
+        connection.close()
 
     return None
 
@@ -61,15 +64,17 @@ sql_database_table : "str"="players_score") -> None:
     
     if dataframe.empty:
         logger.warning("DataFrame is empty. No data written to the database.")
-        return None
-    
-    engine = create_engine(f'sqlite:///{sql_database}', echo=False)
-    dataframe.to_sql(
-        sql_database_table, 
-        con=engine, 
-        index_label="date",
-        if_exists='append')
+    else:
+        engine = sqlalchemy.create_engine(f'sqlite:///{sql_database}', echo=False)
+        try:
+            dataframe.to_sql(
+                sql_database_table, 
+                con=engine, 
+                index_label="date",
+                if_exists='append',)
 
-    logger.info(f"DataFrame writting to {sql_database}: Succsess")
+            logger.info(f"DataFrame writting to {sql_database}: Succsess")
+        except sqlalchemy.exc.IntegrityError:
+            logger.debug(f"write_df_to_sql_database: This date row already exist in {sql_database}")
 
     return None
