@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
 import os
 from dotenv import load_dotenv
-from ps_parser import get_players_score, make_score_prety
+import ps_parser
 
 load_dotenv()
 
@@ -36,7 +36,7 @@ async def cmd_start(message: types.Message):
 # Хэндлер на команду /test1
 @dp.message(Command("ps"))
 async def cmd_ps(message: types.Message):
-    await message.answer(f"{make_score_prety(get_players_score())}")
+    await message.answer(f"{ps_parser.make_score_prety(ps_parser.get_players_score())}")
 
 # Хэндлер на команду /test2
 async def cmd_test2(message: types.Message):
@@ -47,9 +47,14 @@ async def cmd_test2(message: types.Message):
 async def main():
     await dp.start_polling(bot)
     # Регистрации
-    dp.message.register(cmd_test2, Command("test2"))
+    #dp.message.register(cmd_test2, Command("test2"))
 
 # Тело бота
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, ps_parser.schedule_every_day)
+
+    loop.run_until_complete(main())
+
+    #asyncio.run(main())

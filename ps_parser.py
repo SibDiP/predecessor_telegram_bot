@@ -1,7 +1,10 @@
 import requests
+
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 import logging
+import schedule
+from time import sleep
 
 import ps_data_manager
 import players
@@ -80,17 +83,27 @@ def make_score_prety(players_score : dict[str, float]) -> str:
     logger.debug(prety_player_score)
     logger.info("Make score pretty: Success")
 
-    return prety_player_score
-    
-def main():
-    #print(make_score_prety(get_players_score()))
+    return prety_player_score 
 
-
-    ps_data_manager.create_sql_database()
-
+def ps_from_api_to_db():
     ps_data_manager.write_df_to_sql_database(
-        ps_data_manager.convert_ps_to_pd_dataframe(
-            get_players_score()))
+    ps_data_manager.convert_ps_to_pd_dataframe(
+        get_players_score()))
+    logger.info("Today data saving in db: Success")
+
+def schedule_every_day():
+    # TODO add condition for longer sleep time
+    schedule.every().day.at("21:39").do(ps_from_api_to_db)
+    while True:
+        schedule.run_pending()
+        logger.debug("Чекнул")
+        sleep(50)
+
+
+def main():
+    schedule_every_day()
+
+
 
 
 if __name__ == "__main__":
