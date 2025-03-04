@@ -46,8 +46,6 @@ async def cmd_test2(message: types.Message):
 # Запуск процесса поллинга новых апдейтов
 async def main():
     await dp.start_polling(bot)
-    # Регистрации
-    #dp.message.register(cmd_test2, Command("test2"))
 
 # Тело бота
 

@@ -6,7 +6,7 @@ import sqlalchemy
 
 from datetime import datetime
 import players
-import schedule
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -79,4 +79,3 @@ sql_database_table : "str"="players_score") -> None:
             logger.debug(f"write_df_to_sql_database: This date row already exist in {sql_database}")
 
     return None
-
