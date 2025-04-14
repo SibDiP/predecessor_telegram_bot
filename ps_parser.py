@@ -61,6 +61,10 @@ def sort_players_by_score(player_score: dict[str, float]) -> dict[str, float]:
 
 
 def make_score_prety(players_score : dict[str, float]) -> str:
+    """
+    Get PS dictionarry and return formatted string with players
+    sorted by score amount.
+    """
     prety_player_score = ""
     players_score = sort_players_by_score(players_score)
     medals = ("🏆", "🥈", "🥉", "🧑‍🌾", "🧑‍🦯",)
@@ -82,7 +86,7 @@ def make_score_prety(players_score : dict[str, float]) -> str:
 def ps_from_api_to_db():
     ps_data_manager.write_df_to_sql_database(
     ps_data_manager.convert_ps_to_pd_dataframe(
-        get_players_score_form_bs()))
+        get_players_score_form_api()))
     logger.info("Today data saving in db: Success")
 
 def schedule_every_day():

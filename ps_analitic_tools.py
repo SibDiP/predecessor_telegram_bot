@@ -5,7 +5,7 @@ class Analitic:
     players_score_end : dict[str, float] = {}
 
     @staticmethod
-    def setter_players_score_start(players_score : dict [str, float]) -> None:
+    def setter_players_score_start(players_score : dict [str, float]) -> str:
         """
         Get current play score data and save it as start point for recording.
         """
@@ -14,13 +14,18 @@ class Analitic:
         return "Стартовый PS записан"
 
     @staticmethod
-    def setter_players_score_end(players_score : dict [str, float]) -> None:
+    def setter_players_score_end(players_score : dict [str, float]) -> str:
         """
         Get current play score data and save it as end point for recording
         """
-        Analitic.players_score_end = players_score
+        return_options = ("Начальный PS отсуствует", "Конечный PS записан")
+        if not Analitic.players_score_start:
+            return_option = 0
+        else:
+            Analitic.players_score_end = players_score
+            return_option = 1
 
-        return "Конечный PS записан"
+        return return_options[return_option]
 
     @staticmethod
     def clear_players_score_records() -> None:
@@ -28,20 +33,29 @@ class Analitic:
         Reset players_score_start and players_score_end
         """
         Analitic.players_score_start, Analitic.players_score_end = None, None
-    
+
+    # @staticmethod
+    # def is_ps_records_written() -> str:
+    #     return_options = (
+    #         "Начальный PS отсутсвует",
+    #         "Конечный PS отсутсвует",
+    #         "Записи PS отсутсвуют", "")
+        
+
     @staticmethod
     # TODO! - works, bud awful
     def difference_players_score_records(
         data_start: Optional[dict[str, float]] = None,
         data_end: Optional[dict[str, float]] = None,
-    ) -> str:
+    ) -> str:  
+
         if data_start is None:
             data_start = Analitic.players_score_start
         if data_end is None:
             data_end = Analitic.players_score_end
 
         result_string = ""
-        up_down_neutral_emoji = ("📈","📉","➖")
+        up_down_neutral_emoji = ("🟢","🔴","🟡")
         compare_signs = ("+", "-", " ")
         compare_index : int = None
         compare_difference : float = None
@@ -59,7 +73,7 @@ class Analitic:
                 compare_index = 2
 
             #formatted_str = f"{number:06.2f}"
-            result_string += f"""{data_end[player]:06.2f} | {up_down_neutral_emoji[compare_index]} {compare_difference:04.2f} | {player}\n"""
+            result_string += f"""{data_end[player]:0>6.2f} | {up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | {player}\n"""
         
         return  result_string
 

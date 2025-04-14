@@ -34,7 +34,7 @@ dp = Dispatcher()
 async def cmd_start(message: types.Message):
     await message.answer("Hello!")
 
-# Хэндлер на команду /test1
+# Хэндлер на команду /ps
 @dp.message(Command("ps"))
 async def cmd_ps(message: types.Message):
     await message.answer(f"{ps_parser.make_score_prety(ps_parser.get_players_score_from_api())}")
@@ -68,8 +68,9 @@ async def main():
 # Тело бота
 
 if __name__ == "__main__":
+    # Commited until it's done
     loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, ps_parser.schedule_every_day)
+    #loop.run_in_executor(None, ps_parser.schedule_every_day)
 
     loop.run_until_complete(main())
 
