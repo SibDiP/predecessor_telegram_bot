@@ -65,12 +65,13 @@ def make_score_prety(players_score : dict[str, float]) -> str:
     players_score = sort_players_by_score(players_score)
     medals = ("🏆", "🥈", "🥉", "🧑‍🌾", "🧑‍🦯",)
     medals_counter = 0
-
+    pretty_ps_dict: dict[str, str] = {}
+    
     for player, score in players_score.items():
-        if score < 100:
-            score = "".join(("0", str(score)))
+        # number format xx.x -> 0xx.x0
+        pretty_ps_score = f'{score:0>6.2f}'            
 
-        prety_player_score += f"\n{score} | {medals[medals_counter]} | {player}"
+        prety_player_score += f"\n{pretty_ps_score} | {medals[medals_counter]} | {player}"
         medals_counter += 1
     
     logger.debug(prety_player_score)
