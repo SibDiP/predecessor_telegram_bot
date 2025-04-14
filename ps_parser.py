@@ -5,6 +5,7 @@ import requests
 import logging
 import schedule
 from time import sleep
+from ps_analitic_tools import Analitic
 
 import ps_data_manager
 import players
@@ -27,7 +28,7 @@ def get_players_score_from_api() -> dict[str, float]:
     
     for player, player_id in players.PLAYERS_ADRESSES.items():
         response = requests.get(f"{BASE_OMEDA_ADRESS}{player_id}/statistics.json")
-        player_sql_friendly_name = player.replace(' ','_')
+        #player_sql_friendly_name = player.replace(' ','_')
         
         if response.status_code == 200:
             api_data = response.json()
@@ -36,7 +37,8 @@ def get_players_score_from_api() -> dict[str, float]:
         else:
             logger.info(f"Data extraction: API/GET erorr {response.status_code}")
         
-        players_score[player_sql_friendly_name] = round(api_data[data_for_extraction],2)
+        #players_score[player_sql_friendly_name] = round(api_data[data_for_extraction],2)
+        players_score[player] = round(api_data[data_for_extraction],2)
 
 
     
@@ -133,6 +135,7 @@ def schedule_every_day():
 
 def main():
     #schedule_every_day()
+    #Analitic.players_score_recorder_start(get_players_score_from_api())
     get_players_score_from_api()
 
 

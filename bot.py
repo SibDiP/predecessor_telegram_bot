@@ -5,6 +5,7 @@ from aiogram.filters.command import Command
 import os
 from dotenv import load_dotenv
 import ps_parser
+from ps_analitic_tools import Analitic
 
 load_dotenv()
 
@@ -36,7 +37,24 @@ async def cmd_start(message: types.Message):
 # Хэндлер на команду /test1
 @dp.message(Command("ps"))
 async def cmd_ps(message: types.Message):
-    await message.answer(f"{ps_parser.make_score_prety(ps_parser.get_players_score())}")
+    await message.answer(f"{ps_parser.make_score_prety(ps_parser.get_players_score_from_api())}")
+
+@dp.message(Command("ps_rec_start"))
+async def cmd_ps_rec_start(message: types.Message):
+    await message.answer(
+        Analitic.setter_players_score_start(
+            ps_parser.get_players_score_from_api()))
+
+@dp.message(Command("ps_rec_end"))
+async def cmd_ps_rec_end(message: types.Message):
+    await message.answer(
+        Analitic.setter_players_score_end(
+            ps_parser.get_players_score_from_api()))
+
+@dp.message(Command("ps_rec_result"))
+async def cmd_ps_rec_result(message: types.Message):
+    await message.answer(
+        Analitic.difference_players_score_records())
 
 # Хэндлер на команду /test2
 async def cmd_test2(message: types.Message):
