@@ -5,7 +5,6 @@ import requests
 import logging
 import schedule
 from time import sleep
-from ps_analitic_tools import Analitic
 
 import ps_data_manager
 import players
@@ -23,7 +22,6 @@ def get_players_score_from_api() -> dict[str, float]:
     :return dictianary {player : average_score_value}
     """
     data_for_extraction = "avg_performance_score"
-    player_score : float = None
     players_score : dict[str, float] = {}
     
     for player, player_id in players.PLAYERS_ADRESSES.items():
@@ -69,7 +67,6 @@ def make_score_prety(players_score : dict[str, float]) -> str:
     players_score = sort_players_by_score(players_score)
     medals = ("🏆", "🥈", "🥉", "🧑‍🌾", "🧑‍🦯",)
     medals_counter = 0
-    pretty_ps_dict: dict[str, str] = {}
     
     for player, score in players_score.items():
         # number format xx.x -> 0xx.x0
@@ -86,7 +83,7 @@ def make_score_prety(players_score : dict[str, float]) -> str:
 def ps_from_api_to_db():
     ps_data_manager.write_df_to_sql_database(
     ps_data_manager.convert_ps_to_pd_dataframe(
-        get_players_score_form_api()))
+        get_players_score_from_api()))
     logger.info("Today data saving in db: Success")
 
 def schedule_every_day():
