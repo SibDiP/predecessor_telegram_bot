@@ -1,4 +1,11 @@
 from typing import Optional
+import logging
+
+import ps_parser
+
+#TODO: вынести настройки дебагера в settings.py
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class Analitic:
     players_score_start : dict[str, float] = {}
@@ -43,43 +50,43 @@ class Analitic:
         
 
     @staticmethod
-    # TODO! - works, bud awful
+    # TODO! - works, bud awful. Ошибка. Странно согласуются аргументы
+    # в функции и аргументы класса. Виимо где то пробрасываются.
     def difference_players_score_records(
         data_start: Optional[dict[str, float]] = None,
         data_end: Optional[dict[str, float]] = None,
-    ) -> str:  
+    ) -> str:
 
-        if data_start is None:
-            data_start = Analitic.players_score_start
-        if data_end is None:
-            data_end = Analitic.players_score_end
+        if not Analitic.players_score_start:
+            return "Стартовый PS отсутсвует"
+
+        Analitic.setter_players_score_end(ps_parser.get_players_score_from_api())
 
         result_string = ""
         up_down_neutral_emoji = ("🟢","🔴","🟡")
-        compare_signs = ("+", "-", " ")
         compare_index : int = None
         compare_difference : float = None
 
 
-        # loop throug data_end
-        for player, score in data_end.items():
-            compare_difference = abs(data_end[player] - data_start[player])
+        # loop throug Analitic.players_score_end
+        for player, score in Analitic.players_score_end.items():
+            compare_difference = abs(Analitic.players_score_end[player] - Analitic.players_score_start[player])
 
-            if data_end[player] > data_start[player]:
+            if Analitic.players_score_end[player] > Analitic.players_score_start[player]:
                 compare_index = 0
-            elif data_end[player] < data_start[player]:
+            elif Analitic.players_score_end[player] < Analitic.players_score_start[player]:
                 compare_index = 1
-            elif data_end[player] == data_start[player]:
+            elif Analitic.players_score_end[player] == Analitic.players_score_start[player]:
                 compare_index = 2
 
             #formatted_str = f"{number:06.2f}"
-            result_string += f"""{data_end[player]:0>6.2f} | {up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | {player}\n"""
+            result_string += f"""{Analitic.players_score_end[player]:0>6.2f} | {up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | {player[:14]}\n"""
         
         return  result_string
 
 def make_score_prety(players_score : dict[str, float]) -> str:
     prety_player_score = ""
-    players_score = sort_players_by_score(players_score)
+    players_score = ps_parser.sort_players_by_score(players_score)
     medals = ("🏆", "🥈", "🥉", "🧑‍🌾", "🧑‍🦯",)
     medals_counter = 0
 
