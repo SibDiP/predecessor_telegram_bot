@@ -10,10 +10,12 @@ from ps_analitic_tools import Analitic
 load_dotenv()
 
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
+LOGGING_MODE = os.getenv("LOGGING_MODE")
+log_lvl = getattr(logging, LOGGING_MODE)
 
 # Включаем логирование, чтобы не пропустить важные сообщения
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=log_lvl)
+logger = logging.getLogger(__name__)
 # Объект бота
 bot = Bot(token=TG_TOKEN)
 # Диспетчер 

@@ -3,8 +3,7 @@ import logging
 
 import ps_parser
 
-#TODO: вынести настройки дебагера в settings.py
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class Analitic:

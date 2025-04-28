@@ -9,7 +9,7 @@ from time import sleep
 import ps_data_manager
 import players
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
