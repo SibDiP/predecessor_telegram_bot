@@ -184,21 +184,10 @@ async def cmd_ps_rec_start(message: types.Message):
         Analitic.setter_players_score_start(
             ps_parser.get_players_score_from_api()))
 
-@dp.message(Command("ps_rec_end"))
-async def cmd_ps_rec_end(message: types.Message):
-    await message.answer(
-        Analitic.setter_players_score_end(
-            ps_parser.get_players_score_from_api()))
-
 @dp.message(Command("ps_rec_result"))
 async def cmd_ps_rec_result(message: types.Message):
     await message.answer(
         Analitic.difference_players_score_records())
-
-# Хэндлер на команду /test2
-async def cmd_test2(message: types.Message):
-    await message.reply("Test 2")
-
 
 # Запуск процесса поллинга новых апдейтов
 async def main():
