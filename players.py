@@ -1,3 +1,32 @@
+# logger
+
+class Players_controller:
+    @staticmethod
+    def create_player(name, omeda_id):
+        pass
+    
+    @staticmethod
+    def del_player(name):
+        pass
+
+    
+
+class Player:
+    def __init__(self, name, omeda_id):
+        self.name = name
+        self.omeda_id
+
+
+
+
+
+
+
+
+
+
+# Legacy
+
 # Traced players. {nik_name : id}
 PLAYERS_ADRESSES = {
     "evvec" : "d6f5c363-6550-4af2-a84e-2d8e68e0010b",

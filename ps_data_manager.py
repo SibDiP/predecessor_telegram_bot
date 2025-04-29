@@ -2,7 +2,9 @@ import os
 import pandas as pd
 import logging
 import sqlite3
-import sqlalchemy
+
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.orm import declarative_base
 
 from datetime import datetime
 import players
@@ -10,8 +12,22 @@ import players
 
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+# SQLAlchemy
+Base = declarative_base()
 
-PLAYERS_FOR_SQL = [k.replace(' ','_') for k in players.PLAYERS_ADRESSES.keys()]
+#PLAYERS_FOR_SQL = [k.replace(' ','_') for k in players.PLAYERS_ADRESSES.keys()]
+
+class Users(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    chat_id = Column(Integer)
+    name = Column(String(25))
+    omeda_id = Column(String(40))
+
+def create_sql_players_database() -> None:
+    engine = create_engine('sqlite:///ps_data.db')
+    Base.metadata.create_all(engine)
 
 
 def convert_ps_to_pd_dataframe(players_score : dict[str, float]) -> pd.DataFrame:
@@ -49,11 +65,10 @@ def create_sql_database(sql_database : "str" = "ps_data.db") -> None:
         for player in PLAYERS_FOR_SQL])}
         )
         ''')
-        
-        logger.info(f"SQLite database {sql_database} creating: Success")
 
         # Save table
         connection.commit()
+        logger.info(f"SQLite database {sql_database} creating: Success")
         connection.close()
 
     return None
@@ -66,7 +81,7 @@ sql_database_table : "str"="players_score") -> None:
     if dataframe.empty:
         logger.warning("DataFrame is empty. No data written to the database.")
     else:
-        engine = sqlalchemy.create_engine(f'sqlite:///{sql_database}', echo=False)
+        engine = create_engine(f'sqlite:///{sql_database}', echo=False)
         try:
             dataframe.to_sql(
                 sql_database_table, 
@@ -79,3 +94,7 @@ sql_database_table : "str"="players_score") -> None:
             logger.debug(f"write_df_to_sql_database: This date row already exist in {sql_database}")
 
     return None
+
+
+if __name__ == '__main__':
+    create_sql_players_database()
