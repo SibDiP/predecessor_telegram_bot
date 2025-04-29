@@ -1,7 +1,10 @@
 import asyncio
 import logging
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types ,F
 from aiogram.filters.command import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 import os
 from dotenv import load_dotenv
 import ps_parser
@@ -19,9 +22,6 @@ logger = logging.getLogger(__name__)
 
 ps_data_manager.create_sql_database()
 
-
-
-
 # Объект бота
 bot = Bot(token=TG_TOKEN)
 # Диспетчер 
@@ -37,141 +37,6 @@ dp = Dispatcher()
 # сообщение, редактирование сообщения, 
 # колбэк, инлайн-запрос, платёж, добавление 
 # бота в группу и т.д. 
-
-# @dp.message(Command("add_player"))
-# async def cmd_start(message: types.Message):
-#     chat_id = message.chat.id
-#     await message.answer("Hello!")
-
-from aiogram import F, types
-from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
-
-# 1. Определяем состояния FSM (Finite State Machine)
-class AddPlayerStates(StatesGroup):
-    """
-    Класс состояний для процесса добавления игрока.
-    Каждое состояние соответствует этапу диалога.
-    """
-    waiting_for_name = State()      # Ожидание ввода никнейма
-    waiting_for_omeda_id = State()  # Ожидание ввода Omeda ID
-
-# 2. Хендлер команды /add_player
-@dp.message(Command("add_player"))
-async def cmd_add_player(message: types.Message, state: FSMContext):
-    """
-    Обработчик команды /add_player.
-    Инициализирует процесс добавления игрока.
-    
-    Args:
-        message: Объект сообщения от пользователя
-        state: Контекст состояния FSM
-    """
-    # Сохраняем идентификаторы пользователя и чата
-    await state.update_data(
-        user_id=message.from_user.id,  # Уникальный ID пользователя
-        chat_id=message.chat.id        # ID чата (личного или группового)
-    )
-    
-    # Создаем клавиатуру с кнопкой отмены
-    builder = ReplyKeyboardBuilder()
-    builder.add(types.KeyboardButton(text="❌ Отмена"))
-    
-    # Запрашиваем никнейм игрока
-    await message.answer(
-        "Введите никнейм игрока:",
-        reply_markup=builder.as_markup(resize_keyboard=True)
-    )
-    # Устанавливаем первое состояние
-    await state.set_state(AddPlayerStates.waiting_for_name)
-
-# 3. Хендлер для обработки никнейма
-@dp.message(AddPlayerStates.waiting_for_name, F.text != "❌ Отмена")
-async def process_player_name(message: types.Message, state: FSMContext):
-    """
-    Обрабатывает введенный никнейм игрока.
-    Проверяет, что сообщение от того же пользователя, который начал процесс.
-    
-    Args:
-        message: Объект сообщения с никнеймом
-        state: Контекст состояния FSM
-    """
-    # Получаем сохраненные данные
-    data = await state.get_data()
-    
-    # Проверяем, что сообщение от того же пользователя
-    if message.from_user.id != data['user_id']:
-        await message.answer("Пожалуйста, дождитесь завершения текущего процесса.")
-        return
-    
-    # Сохраняем никнейм и запрашиваем Omeda ID
-    await state.update_data(player_name=message.text)
-    
-    await message.answer(
-        "Введите Omeda ID игрока (https://omeda.city/players/{omeda_id}):",
-        reply_markup=types.ReplyKeyboardRemove()  # Убираем клавиатуру
-    )
-    # Переходим к следующему состоянию
-    await state.set_state(AddPlayerStates.waiting_for_omeda_id)
-
-# 4. Хендлер для обработки Omeda ID
-@dp.message(AddPlayerStates.waiting_for_omeda_id, F.text != "❌ Отмена")
-async def process_omeda_id(message: types.Message, state: FSMContext):
-    """
-    Обрабатывает введенный Omeda ID и завершает процесс добавления.
-    
-    Args:
-        message: Объект сообщения с Omeda ID
-        state: Контекст состояния FSM
-    """
-    # Получаем все сохраненные данные
-    data = await state.get_data()
-    
-    # Проверяем пользователя
-    if message.from_user.id != data['user_id']:
-        await message.answer("Пожалуйста, не мешайте другим игрокам.")
-        return
-    
-    # Получаем сохраненные значения
-    player_name = data['player_name']
-    omeda_id = message.text
-    chat_id = data['chat_id']
-    
-    try:
-        # Добавляем игрока в базу данных
-        ps_data_manager.add_player(player_name, omeda_id, chat_id)
-        
-        # Отправляем подтверждение
-        await message.answer(
-            f"Игрок {player_name} успешно добавлен в команду!",
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-    except Exception as e:
-        await message.answer(
-            f"Ошибка при добавлении игрока: {str(e)}",
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-    finally:
-        # Всегда очищаем состояние
-        await state.clear()
-
-# 5. Хендлер для отмены операции
-@dp.message(F.text == "❌ Отмена")
-async def cancel_handler(message: types.Message, state: FSMContext):
-    """
-    Обработчик отмены операции.
-    """
-    data = await state.get_data()
-    if message.from_user.id == data.get('user_id'):
-        await message.answer(
-            "Добавление игрока отменено.",
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        await state.clear()
-
-
 
 # Хэндлер на команду /ps
 @dp.message(Command("ps"))
@@ -190,6 +55,104 @@ async def cmd_ps_rec_result(message: types.Message):
         Analitic.difference_players_score_records())
 
 # Запуск процесса поллинга новых апдейтов
+async def main():
+    await dp.start_polling(bot)
+
+# add_player логика
+
+class AddPlayerStates(StatesGroup):
+    """
+    Класс состояний для этапов добавления игрока
+    """
+    waiting_for_name = State() 
+    waiting_for_omeda_id = State()
+
+def get_cancel_inline_keyboard():
+    """Создает inline-клавиатуру с кнопкой отмены"""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="❌ Отмена", callback_data="cancel_add_player")
+    return builder.as_markup()
+
+@dp.message(Command("add_player"))
+async def cmd_add_player(message: types.Message, state: FSMContext):
+    """
+    Инициализация процесса добавления игрока в БД
+    """
+    await state.update_data(
+        user_id=message.from_user.id,
+        chat_id=message.chat.id
+    )
+
+    await message.answer(
+        "Введите никнейм:",
+        reply_markup=get_cancel_inline_keyboard()
+    )
+    await state.set_state(AddPlayerStates.waiting_for_name)
+
+@dp.message(AddPlayerStates.waiting_for_name)
+async def process_add_player_name(message: types.Message, state: FSMContext):
+    """
+    Обрабатывает никнейм.
+    Проверяет пользователя
+    """
+    data = await state.get_data()
+
+    if message.from_user.id != data['user_id']:
+        await message.answer("Подождите завершения процесса.")
+        return
+    
+    await state.update_data(player_name=message.text)
+
+    await message.answer(
+        "Введите Omeda ID игрока (https://omeda.city/players/{omeda_id}):",
+        reply_markup=get_cancel_inline_keyboard()
+    )
+    await state.set_state(AddPlayerStates.waiting_for_omeda_id)
+
+@dp.message(AddPlayerStates.waiting_for_omeda_id)
+async def process_add_player_omeda_id(message: types.Message, state: FSMContext):
+    """
+    Обрабатывает omeda_id,
+    проверяет пользователя,
+    завершает процесс добавления нового игрока в БД
+    """
+    data = await state.get_data()
+
+    if message.from_user.id != data['user_id']:
+        await message.answer("Подождите завершения процесса.")
+        return
+    
+    player_name = data['player_name']
+    omeda_id = message.text
+    chat_id = data['chat_id']
+
+    try:
+        ps_data_manager.add_player(player_name, omeda_id, chat_id)
+        await message.answer(
+            f"Игрок {player_name} успешно добавлен в команду!",
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+    except Exception as e:
+        await message.answer(
+            f"Ошибка при добавлении игрока: {str(e)}"
+        )
+    finally:
+        await state.clear()
+
+@dp.callback_query(F.data == "cancel_add_player")
+async def cancel_handler(callback: types.CallbackQuery, state: FSMContext):
+    """
+    Обработчик отмены операции через inline-кнопку
+    """
+    data = await state.get_data()
+    if callback.from_user.id == data.get('user_id'):
+        await callback.message.edit_text(
+            "Добавление игрока отменено",
+            reply_markup=None
+        )
+        await state.clear()
+    await callback.answer()
+
 async def main():
     await dp.start_polling(bot)
 
