@@ -7,6 +7,8 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import os
 from dotenv import load_dotenv
+
+from users_manager import Users_controller
 import ps_parser
 from ps_analitic_tools import Analitic
 import ps_data_manager
@@ -20,7 +22,7 @@ LOG_LVL = getattr(logging, os.getenv("LOGGING_MODE"))
 logging.basicConfig(level=LOG_LVL)
 logger = logging.getLogger(__name__)
 
-ps_data_manager.create_sql_database()
+uc = Users_controller()
 
 # Объект бота
 bot = Bot(token=TG_TOKEN)
@@ -125,9 +127,9 @@ async def process_add_player_omeda_id(message: types.Message, state: FSMContext)
     player_name = data['player_name']
     omeda_id = message.text
     chat_id = data['chat_id']
-
+    print(player_name, omeda_id, chat_id)
     try:
-        ps_data_manager.add_player(player_name, omeda_id, chat_id)
+        uc.add_player(player_name, omeda_id, chat_id)
         await message.answer(
             f"Игрок {player_name} успешно добавлен в команду!",
             reply_markup=types.ReplyKeyboardRemove()

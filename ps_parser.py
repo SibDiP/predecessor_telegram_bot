@@ -7,7 +7,7 @@ import schedule
 from time import sleep
 
 import ps_data_manager
-import players
+import users_manager # users_manager тепреь
 
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def get_players_score_from_api() -> dict[str, float]:
     data_for_extraction = "avg_performance_score"
     players_score : dict[str, float] = {}
     
-    for player, player_id in players.PLAYERS_ADRESSES.items():
+    for player, player_id in users_manager.PLAYERS_ADRESSES.items():
         response = requests.get(f"{BASE_OMEDA_ADRESS}{player_id}/statistics.json")
         #player_sql_friendly_name = player.replace(' ','_')
         

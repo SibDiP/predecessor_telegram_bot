@@ -3,32 +3,14 @@ import pandas as pd
 import logging
 import sqlite3
 
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import declarative_base
-
 from datetime import datetime
-import players
+from users_manager import UsersModel, Users_controller
 
 
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-# SQLAlchemy
-Base = declarative_base()
 
 #PLAYERS_FOR_SQL = [k.replace(' ','_') for k in players.PLAYERS_ADRESSES.keys()]
-
-class Users(Base):
-    __tablename__ = 'users'
-
-    id = Column(Integer, primary_key=True)
-    chat_id = Column(Integer)
-    name = Column(String(25))
-    omeda_id = Column(String(40))
-
-def create_sql_players_database() -> None:
-    engine = create_engine('sqlite:///ps_data.db')
-    Base.metadata.create_all(engine)
-
 
 def convert_ps_to_pd_dataframe(players_score : dict[str, float]) -> pd.DataFrame:
     """
