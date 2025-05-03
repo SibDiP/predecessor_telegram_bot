@@ -4,79 +4,85 @@ import logging
 import sqlite3
 
 from datetime import datetime
-from users_manager import UsersModel, Users_controller
+from users_manager import UsersModel, UsersСontroller
 
 
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
+
+
+
+# Всё, что ниже, требует конкретного перелапачивания.
+
 #PLAYERS_FOR_SQL = [k.replace(' ','_') for k in players.PLAYERS_ADRESSES.keys()]
 
-def convert_ps_to_pd_dataframe(players_score : dict[str, float]) -> pd.DataFrame:
-    """
-    Convert Player Score dictionary to pandas DataFrame with three
-    columns: id, Player, Player Score
+# def convert_ps_to_pd_dataframe(players_score : dict[str, float]) -> pd.DataFrame:
+#     """
+#     Convert Player Score dictionary to pandas DataFrame with three
+#     columns: id, Player, Player Score
 
-    return: pd.DataFrame
-    """
+#     return: pd.DataFrame
+#     """
 
-    df = pd.DataFrame(data=players_score, index=[0])
-    df['date'] = datetime.now().strftime('%Y-%m-%d')
-    df = df.set_index('date')
+#     df = pd.DataFrame(data=players_score, index=[0])
+#     df['date'] = datetime.now().strftime('%Y-%m-%d')
+#     df = df.set_index('date')
 
-    logger.debug(f"\n{df.to_string()}")
-    logger.info("Create pandas DataFrame: Success")
+#     logger.debug(f"\n{df.to_string()}")
+#     logger.info("Create pandas DataFrame: Success")
 
-    return df
+#     return df
 
-def create_sql_database(sql_database : "str" = "ps_data.db") -> None:
-    """
-    Write pd.DataFrame object to .sqliete 
-    """
-    if os.path.isfile(sql_database):
-        logger.info(f"SQLite database creating: {sql_database} already exist")
-    else:
-        connection = sqlite3.connect(sql_database)
-        coursor = connection.cursor()
+# def create_sql_database(sql_database : "str" = "ps_data.db") -> None:
+#     """
+#     Write pd.DataFrame object to .sqliete 
+#     """
+#     if os.path.isfile(sql_database):
+#         logger.info(f"SQLite database creating: {sql_database} already exist")
+#     else:
+#         connection = sqlite3.connect(sql_database)
+#         coursor = connection.cursor()
         
-        # Create table
-        coursor.execute(f'''
-        CREATE TABLE IF NOT EXISTS players_Score (
-        date TEXT PRIMARY KEY,
-        {", ".join([f"{player} REAL NOT NULL" 
-        for player in PLAYERS_FOR_SQL])}
-        )
-        ''')
+#         # Create table
+#         coursor.execute(f'''
+#         CREATE TABLE IF NOT EXISTS players_Score (
+#         date TEXT PRIMARY KEY,
+#         {", ".join([f"{player} REAL NOT NULL" 
+#         for player in PLAYERS_FOR_SQL])}
+#         )
+#         ''')
 
-        # Save table
-        connection.commit()
-        logger.info(f"SQLite database {sql_database} creating: Success")
-        connection.close()
+#         # Save table
+#         connection.commit()
+#         logger.info(f"SQLite database {sql_database} creating: Success")
+#         connection.close()
 
-    return None
+#     return None
 
 
-def write_df_to_sql_database(dataframe : pd.DataFrame, 
-sql_database : "str"="ps_data.db",
-sql_database_table : "str"="players_score") -> None:
+# def write_df_to_sql_database(dataframe : pd.DataFrame, 
+# sql_database : "str"="ps_data.db",
+# sql_database_table : "str"="players_score") -> None:
     
-    if dataframe.empty:
-        logger.warning("DataFrame is empty. No data written to the database.")
-    else:
-        engine = create_engine(f'sqlite:///{sql_database}', echo=False)
-        try:
-            dataframe.to_sql(
-                sql_database_table, 
-                con=engine, 
-                index_label="date",
-                if_exists='append',)
+#     if dataframe.empty:
+#         logger.warning("DataFrame is empty. No data written to the database.")
+#     else:
+#         engine = create_engine(f'sqlite:///{sql_database}', echo=False)
+#         try:
+#             dataframe.to_sql(
+#                 sql_database_table, 
+#                 con=engine, 
+#                 index_label="date",
+#                 if_exists='append',)
 
-            logger.info(f"DataFrame writting to {sql_database}: Succsess")
-        except sqlalchemy.exc.IntegrityError:
-            logger.debug(f"write_df_to_sql_database: This date row already exist in {sql_database}")
+#             logger.info(f"DataFrame writting to {sql_database}: Succsess")
+#         except sqlalchemy.exc.IntegrityError:
+#             logger.debug(f"write_df_to_sql_database: This date row already exist in {sql_database}")
 
-    return None
+#     return None
 
 
 if __name__ == '__main__':
-    create_sql_players_database()
+    pass

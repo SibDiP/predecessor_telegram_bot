@@ -8,7 +8,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 import os
 from dotenv import load_dotenv
 
-from users_manager import Users_controller
+from users_manager import UsersСontroller
 import ps_parser
 from ps_analitic_tools import Analitic
 import ps_data_manager
@@ -22,7 +22,7 @@ LOG_LVL = getattr(logging, os.getenv("LOGGING_MODE"))
 logging.basicConfig(level=LOG_LVL)
 logger = logging.getLogger(__name__)
 
-uc = Users_controller()
+uc = UsersСontroller()
 
 # Объект бота
 bot = Bot(token=TG_TOKEN)
@@ -39,6 +39,12 @@ dp = Dispatcher()
 # сообщение, редактирование сообщения, 
 # колбэк, инлайн-запрос, платёж, добавление 
 # бота в группу и т.д. 
+
+#тестовый хендлер
+@dp.message(Command("test_db"))
+async def cmd_ps_rec_start(message: types.Message):
+    uc.get_chat_users_and_omeda_id(message.chat.id)
+    await message.answer("YEAH")
 
 # Хэндлер на команду /ps
 @dp.message(Command("ps"))
@@ -154,6 +160,8 @@ async def cancel_handler(callback: types.CallbackQuery, state: FSMContext):
         )
         await state.clear()
     await callback.answer()
+
+
 
 async def main():
     await dp.start_polling(bot)

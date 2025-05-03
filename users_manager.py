@@ -1,6 +1,6 @@
 import logging
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import create_engine, Column, Integer, String, Index
+from sqlalchemy import create_engine, Column, BigInteger, Integer, String, Index
 from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)
@@ -15,14 +15,14 @@ class UsersModel(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    chat_id = Column(Integer, nullable=False, index=True)
+    chat_id = Column(BigInteger, nullable=False, index=True)
     name = Column(String(NAME_LEN), nullable=False)
     omeda_id = Column(String(OMEDA_ID_LEN), nullable=False)
 
 
 
 # Контроллер для CRD пользователей в БД
-class Users_controller:
+class UsersСontroller:
     def __init__(self):
         """
         Создание базы данных и sessionmaker
@@ -79,6 +79,29 @@ class Users_controller:
             raise e
         finally:
             session.close()
+    
+    def get_chat_users_and_omeda_id(self, chat_id: int):
+        """
+        Возвращает словарь {name: omeda_id} для пользователей
+        указанного чата
+        """
+        
+        with self.Session() as session:
+            users = session.query(UsersModel).filter_by(chat_id=chat_id).all()
+            logger.debug(f"Users from db: {users}")
+            users_data = [
+                {
+                    'id': user.id,
+                    'name': user.name,
+                    'omeda_id': user.omeda_id,
+                    'chat_id': user.chat_id
+                }
+                for user in users
+            ]
+            logger.debug(users_data)
+
+
+
 
 
 
