@@ -2,6 +2,7 @@ import logging
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import create_engine, Column, BigInteger, Integer, String, Index
 from sqlalchemy.orm import sessionmaker
+from threading import Lock
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +24,30 @@ class UsersModel(Base):
 
 # Контроллер для CRD пользователей в БД
 class UsersСontroller:
+    _instance = None
+    _lock = Lock()
+
+    def __new__(cls):
+        """
+        Проверка на существование объекта класса и создание синглтона
+        """
+        with cls._lock:
+            if not cls._instance:
+                cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self):
         """
         Создание базы данных и sessionmaker
         """
-        self.engine = create_engine('sqlite:///ps_data.db')
-        Base.metadata.create_all(self.engine)
-        logger.info(f"Users base creation: Success")
+        if not hasattr(self,'_initialized'):
+            self._initialized = True
+    
+            self.engine = create_engine('sqlite:///ps_data.db')
+            Base.metadata.create_all(self.engine)
+            logger.info(f"Users base creation: Success")
 
-        self.Session = sessionmaker(bind=self.engine)
+            self.Session = sessionmaker(bind=self.engine)
 
     def add_player(self,
         name: str, 
@@ -59,8 +75,8 @@ class UsersСontroller:
         if len(omeda_id) > UsersModel.OMEDA_ID_LEN:
             raise ValueError(f"Omeda_id должен быть не более {UsersModel.OMEDA_ID_LEN} символов")
         
+       
         session = self.Session()
-
         try:
             new_user = UsersModel(
                 name=name,
@@ -87,18 +103,16 @@ class UsersСontroller:
         """
         
         with self.Session() as session:
-            users = session.query(UsersModel).filter_by(chat_id=chat_id).all()
-            logger.debug(f"Users from db: {users}")
-            users_data = [
-                {
-                    'id': user.id,
-                    'name': user.name,
-                    'omeda_id': user.omeda_id,
-                    'chat_id': user.chat_id
-                }
-                for user in users
-            ]
-            logger.debug(users_data)
+            try:
+                users = session.query(UsersModel).filter_by(chat_id=chat_id).all()
+                team_dict = {user.name: user.omeda_id for user in users}
+                logger.debug(f"Team dict: {team_dict}")
+                
+                return team_dict
+
+            except Exception as e:
+                logger.info("Не удалось получть данные пользователей из БД")
+                raise e
 
 
 
