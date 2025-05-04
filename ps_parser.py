@@ -15,16 +15,17 @@ logger = logging.getLogger(__name__)
 
 BASE_OMEDA_ADRESS = "https://omeda.city/players/"
 
-def get_players_score_from_api() -> dict[str, float]:
+def get_players_score_from_api(team_dict: dict[str, str]) -> dict[str, float]:
     """
     Get average ps value for players from API object and return it 
     as a dictioary with range by score
+    :team_dict: dict[name:{'omeda_id':str}]
     :return dictianary {player : average_score_value}
     """
-    data_for_extraction = "avg_performance_score"
+    DATA_FOR_EXTRACTION = "avg_performance_score"
     players_score : dict[str, float] = {}
     
-    for player, player_id in users_manager.PLAYERS_ADRESSES.items():
+    for player, player_id in team_dict.items():
         response = requests.get(f"{BASE_OMEDA_ADRESS}{player_id}/statistics.json")
         #player_sql_friendly_name = player.replace(' ','_')
         
@@ -36,49 +37,16 @@ def get_players_score_from_api() -> dict[str, float]:
             logger.info(f"Data extraction: API/GET erorr {response.status_code}")
         
         #players_score[player_sql_friendly_name] = round(api_data[data_for_extraction],2)
-        players_score[player] = round(api_data[data_for_extraction],2)
+        players_score[player] = round(api_data[DATA_FOR_EXTRACTION],2)
 
 
     
     logger.debug(f"players_score is: {players_score}")
     logger.info("Data Parsing: Success")
 
-    return sort_players_by_score(players_score)
-
-def sort_players_by_score(player_score: dict[str, float]) -> dict[str, float]:
-    """
-    Sort dictionary by score. From high to low.
-    """
-    sorted_scores = dict(sorted(
-        player_score.items(), key=lambda x: x[1], reverse=True))
-
-    logger.debug(f"Sorted scores: {sorted_scores}")
-    logger.info("Sorting players by score: Success")
-
-    return sorted_scores
+    return players_score
 
 
-def make_score_prety(players_score : dict[str, float]) -> str:
-    """
-    Get PS dictionarry and return formatted string with players
-    sorted by score amount.
-    """
-    prety_player_score = ""
-    players_score = sort_players_by_score(players_score)
-    medals = ("🏆", "🥈", "🥉", "🧑‍🌾", "🧑‍🦯",)
-    medals_counter = 0
-    
-    for player, score in players_score.items():
-        # number format xx.x -> 0xx.x0
-        pretty_ps_score = f'{score:0>6.2f}'            
-
-        prety_player_score += f"\n{pretty_ps_score} | {medals[medals_counter]} | {player}"
-        medals_counter += 1
-    
-    logger.debug(prety_player_score)
-    logger.info("Make score pretty: Success")
-
-    return prety_player_score 
 
 def ps_from_api_to_db():
     ps_data_manager.write_df_to_sql_database(

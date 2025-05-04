@@ -98,21 +98,29 @@ class UsersСontroller:
     
     def get_chat_users_and_omeda_id(self, chat_id: int):
         """
-        Возвращает словарь {name: omeda_id} для пользователей
-        указанного чата
+        Возвращает словарь пользователей указанного чата.
+
+        Args:
+            chat_id (int): Идентификатор чата.
+
+        Returns:
+            dict[str, dict[str, str]]: Словарь, где ключом является имя 
+            пользователя, а значением — словарь с Omeda ID пользователя.
+
+        Raises:
+            Exception: Если не удалось получить данные пользователей из БД.
         """
         
         with self.Session() as session:
             try:
                 users = session.query(UsersModel).filter_by(chat_id=chat_id).all()
-                team_dict = {user.name: user.omeda_id for user in users}
+                team_dict = {user.name: {'omeda_id': user.omeda_id} for user in users}
                 logger.debug(f"Team dict: {team_dict}")
-                
                 return team_dict
-
             except Exception as e:
                 logger.info("Не удалось получть данные пользователей из БД")
                 raise e
+
 
 
 
