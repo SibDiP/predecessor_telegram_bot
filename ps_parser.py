@@ -15,15 +15,16 @@ logger = logging.getLogger(__name__)
 
 BASE_OMEDA_ADRESS = "https://omeda.city/players/"
 
-def get_players_score_from_api(team_dict: dict[dict[str, str]]) -> dict[dict[str, float]]:
+def get_players_score_from_api(
+    team_dict: dict[str, dict[str, str]]
+    ) -> dict[str, dict[str, str | float]]:
     """
     Get average ps value for players from API object and return it 
     as a dictioary with range by score
     :team_dict: dict[name:{'omeda_id':str}]
-    :return dictianary {name : {'omeda_id':str, 'average_score_value': float}
+    :return dictianary {name : {'omeda_id':str, 'player_ps': float}
     """
     DATA_FOR_EXTRACTION = "avg_performance_score"
-    #players_score : dict[str, float] = {}
     
     for player, player_info in team_dict.items():
         try:

@@ -23,13 +23,14 @@ def get_team(chat_id: int) -> dict:
 
 def get_team_ps(chat_id: int) -> dict:
     """
-    Возвращает словарь {name: dict{'omeda_id':str, 'ps': int}}
+    Возвращает словарь {name: dict{'omeda_id':str, 'player_ps': int}}
 
         Args:
         chat_id (int): Идентификатор чата.
 
     Returns:
-        dict[str, dict[str, str, int]]: Словарь {name: dict{'omeda_id':str, 'ps': int}}
+        dict[str, dict[str, str | float]]: Словарь {
+        name: dict{'omeda_id':str, 'player_ps': int}}
 
     Raises:
         Exception: Если не удалось cпарсить данные с API omeda
@@ -42,39 +43,57 @@ def get_team_ps(chat_id: int) -> dict:
         logger.info(f"Проблемы с парсингом PS: {e}")
         return {'Беда':0}
 
-def sort_players_by_score(player_score: dict[dict[str, float]]) -> dict[str, float]:
+def sort_players_by_score(team_dict: dict[str, dict[str, str | float]]
+) -> dict[str, dict[str, str | float]]:
     """
     Sort dictionary by score. From high to low.
     """
-    sorted_scores = dict(sorted(
-        player_score.items(), key=lambda x: x[1], reverse=True))
+    try:
+        team_dict_sorted_by_ps = (
+            {k:v for k,v in sorted(
+                team_dict.items(), key=lambda x: x[1]['player_ps'], reverse=True)
+                }
+            
+            )
 
-    logger.debug(f"Sorted scores: {sorted_scores}")
-    logger.info("Sorting players by score: Success")
+        logger.debug(f"Sorted scores: {team_dict_sorted_by_ps}")
+        logger.info("Sorting players by score: Success")
 
-    return sorted_scores
+        return team_dict_sorted_by_ps
+    
+    except Exception as e:
+        logger.debug(f"Сортировка не удалась. Ошибка: {e}")
+        return team_dict
 
-def make_score_prety(players_score : dict[str, float]) -> str:
+def make_score_prety(team_dict: dict[str, dict[str, str | float]]) -> str:
     """
     Get PS dictionarry and return formatted string with players
     sorted by score amount.
     """
-    prety_player_score = ""
-    players_score = sort_players_by_score(players_score)
+    OMEDA_PROFILE_ADRESS = "https://omeda.city/players/"
+    pretty_player_score = ""
+    # players_score = sort_players_by_score(players_score)
     medals = ("🏆", "🥈", "🥉", "🧑‍🌾", "🧑‍🦯",)
     medals_counter = 0
     
-    for player, score in players_score.items():
-        # number format xx.x -> 0xx.x0
-        pretty_ps_score = f'{score:0>6.2f}'            
+    for player, player_data in team_dict.items():
+        pretty_ps = f'{player_data['player_ps']:0>6.2f}'
 
-        prety_player_score += f"\n{pretty_ps_score} | {medals[medals_counter]} | {player}"
-        medals_counter += 1
+        pretty_player_score += f'\n{pretty_ps} | {medals[medals_counter]} | <a href="{OMEDA_PROFILE_ADRESS}{player_data['omeda_id']}">{player}</a>' 
+        medals_counter += 1                                             
+
+
+    # for player, score in players_score.items():
+    #     # number format xx.x -> 0xx.x0
+    #     pretty_ps_score = f'{score:0>6.2f}'            
+
+    #     pretty_player_score += f"\n{pretty_ps_score} | {medals[medals_counter]} | [{player}]({OMEDA_PROFILE_ADRESS}{player_data['omeda_id']}) "
+    #     medals_counter += 1
     
-    logger.debug(prety_player_score)
+    logger.debug(pretty_player_score)
     logger.info("Make score pretty: Success")
 
-    return prety_player_score 
+    return pretty_player_score 
 
 
 # Всё, что ниже, требует конкретного перелапачивания.
