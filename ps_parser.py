@@ -15,38 +15,40 @@ logger = logging.getLogger(__name__)
 
 BASE_OMEDA_ADRESS = "https://omeda.city/players/"
 
-def get_players_score_from_api(team_dict: dict[str, str]) -> dict[str, float]:
+def get_players_score_from_api(team_dict: dict[dict[str, str]]) -> dict[dict[str, float]]:
     """
     Get average ps value for players from API object and return it 
     as a dictioary with range by score
     :team_dict: dict[name:{'omeda_id':str}]
-    :return dictianary {player : average_score_value}
+    :return dictianary {name : {'omeda_id':str, 'average_score_value': float}
     """
     DATA_FOR_EXTRACTION = "avg_performance_score"
-    players_score : dict[str, float] = {}
+    #players_score : dict[str, float] = {}
     
-    for player, player_id in team_dict.items():
-        response = requests.get(f"{BASE_OMEDA_ADRESS}{player_id}/statistics.json")
-        #player_sql_friendly_name = player.replace(' ','_')
-        
-        if response.status_code == 200:
-            api_data = response.json()
-            logger.debug(f"API data for {player}:\n{api_data}")
-            logger.info(f"Get API data for {player}: Success")
-        else:
-            logger.info(f"Data extraction: API/GET erorr {response.status_code}")
-        
-        #players_score[player_sql_friendly_name] = round(api_data[data_for_extraction],2)
-        players_score[player] = round(api_data[DATA_FOR_EXTRACTION],2)
+    for player, player_info in team_dict.items():
+        try:
+            response = requests.get(f"{BASE_OMEDA_ADRESS}{player_info['omeda_id']}/statistics.json")
+            if response.status_code == 200:
+                api_data = response.json()
+                logger.debug(f"API data for {player}:\n{api_data}")
+                logger.info(f"Get API data for {player}: Success")
 
+                player_ps = round(api_data[DATA_FOR_EXTRACTION], 2)
+                player_info['player_ps'] = player_ps
 
-    
-    logger.debug(f"players_score is: {players_score}")
+            else:
+                logger.info(f"Data extraction: API/GET erorr {response.status_code}")   
+        
+        except Exception as e:
+            logger.info(f"Ошибка парсинга, {player}. {e}")
+            player_ps = 0
+
+    logger.debug(f"Team_dict: {team_dict}")
     logger.info("Data Parsing: Success")
 
-    return players_score
+    return team_dict
 
-
+# TODO: всё что ниже переделать
 
 def ps_from_api_to_db():
     ps_data_manager.write_df_to_sql_database(

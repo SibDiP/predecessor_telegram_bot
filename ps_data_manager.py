@@ -17,7 +17,7 @@ def get_team(chat_id: int) -> dict:
     """
     uc = UsersСontroller()
     try:
-        return uc.get_chat_users_and_omeda_id()
+        return uc.get_chat_users_and_omeda_id(chat_id)
     except Exception as e:
         logger.info(f"Проблемы с импортом игроков из БД: {e}")
 
@@ -42,7 +42,7 @@ def get_team_ps(chat_id: int) -> dict:
         logger.info(f"Проблемы с парсингом PS: {e}")
         return {'Беда':0}
 
-def sort_players_by_score(player_score: dict[str, float]) -> dict[str, float]:
+def sort_players_by_score(player_score: dict[dict[str, float]]) -> dict[str, float]:
     """
     Sort dictionary by score. From high to low.
     """
