@@ -4,18 +4,26 @@ import logging
 import sqlite3
 
 from datetime import datetime
-from users_manager import UsersModel, UsersСontroller
+from users_manager import UsersModel, UsersController
 import ps_parser
 
 
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+uc = UsersController()
+
+def add_player_to_db(player_name: str, omeda_id: str, chat_id: int):
+    uc.add_player(player_name, omeda_id, chat_id)
+    return None
+
+def get_player_ps(omeda_id: str) -> float:
+    player_ps = ps_parser.get_player_ps_from_api(omeda_id)
+    return player_ps
 
 def get_team(chat_id: int) -> dict:
     """
     Возвращает словарь {name:{omeda_id},}
     """
-    uc = UsersСontroller()
     try:
         return uc.get_chat_users_and_omeda_id(chat_id)
     except Exception as e:

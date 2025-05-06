@@ -8,10 +8,10 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 import os
 from dotenv import load_dotenv
 
-from users_manager import UsersСontroller
+
 import ps_parser
 from ps_analitic_tools import Analitic
-import ps_data_manager
+import ps_data_manager as pdm
 
 load_dotenv()
 
@@ -22,7 +22,7 @@ LOG_LVL = getattr(logging, os.getenv("LOGGING_MODE"))
 logging.basicConfig(level=LOG_LVL)
 logger = logging.getLogger(__name__)
 
-uc = UsersСontroller()
+
 
 # Объект бота
 bot = Bot(token=TG_TOKEN)
@@ -41,15 +41,29 @@ dp = Dispatcher()
 # бота в группу и т.д. 
 
 #тестовый хендлер
-@dp.message(Command("test_db"))
+@dp.message(Command("t"))
 async def cmd_ps_rec_start(message: types.Message):
-    uc.get_chat_users_and_omeda_id(message.chat.id)
-    await message.answer("YEAH")
+    team_data = pdm.get_team_ps(message.chat.id)
+    sorted_team_data = pdm.sort_players_by_score(team_data)
+
+    await message.answer(f"{sorted_team_data}")
+
+@dp.message(Command("test_db2"))
+async def cmd_ps_rec_start(message: types.Message):
+    pdm.get_team_ps(message.chat.id)
+    await message.answer("YEAH2")
 
 # Хэндлер на команду /ps
 @dp.message(Command("ps"))
 async def cmd_ps(message: types.Message):
-    await message.answer(f"{ps_parser.make_score_prety(ps_parser.get_players_score_from_api())}")
+    team_data = pdm.get_team_ps(message.chat.id)
+    sorted_team_data = pdm.sort_players_by_score(team_data)
+
+
+    await message.answer(
+        pdm.make_score_prety(sorted_team_data),
+        parse_mode='HTML',
+        disable_web_page_preview=True)
 
 @dp.message(Command("ps_rec_start"))
 async def cmd_ps_rec_start(message: types.Message):
@@ -133,9 +147,11 @@ async def process_add_player_omeda_id(message: types.Message, state: FSMContext)
     player_name = data['player_name']
     omeda_id = message.text
     chat_id = data['chat_id']
+
     print(player_name, omeda_id, chat_id)
     try:
-        uc.add_player(player_name, omeda_id, chat_id)
+        pdm.add_player_to_db(player_name, omeda_id, chat_id)
+        
         await message.answer(
             f"Игрок {player_name} успешно добавлен в команду!",
             reply_markup=types.ReplyKeyboardRemove()

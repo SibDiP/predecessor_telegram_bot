@@ -11,9 +11,51 @@ import users_manager # users_manager тепреь
 
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
+requests.adapters.DEFAULT_TIMEOUT = 10
 
 BASE_OMEDA_ADRESS = "https://omeda.city/players/"
+DATA_FOR_EXTRACTION = "avg_performance_score"
+
+def fetch_api_data(omeda_id: str, target_json: str = "s") -> requests.Response:
+    """
+    Получение json файлов из omeda.ciy API.
+
+    Arg:
+        omeda_id: str. Идентификатор игрока
+        json: str. "s" - /statistics.json, "m" - /matches.json
+    
+    Return:
+        requests.Response json в объекте класса Response
+    """
+    API_ENDPOINTS = {
+        's': "/statistics.json",
+        'm': "/matches.json",
+        # "i": "/items.json",
+    }
+    try:
+        url = f"{BASE_OMEDA_ADRESS}{omeda_id}{API_ENDPOINTS[target_json]}"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            logger.debug(f"Response for {omeda_id}:\n{response.text[:200]}")
+            logger.info(f"Get API response for {omeda_id}: Success")
+            return response
+
+        logger.info(f"Data extraction: API/GET erorr {response.status_code}, URL:{url}")   
+        return None
+
+    except Exception as e:
+        logger.info(f"Ошибка парсинга: {e}") 
+    
+    
+
+def get_player_ps_from_api(omeda_id: str) -> float:
+    response = fetch_api_data(omeda_id)
+    api_data = response.json() 
+    player_ps = round(api_data[DATA_FOR_EXTRACTION], 2)
+    return player_ps
+
+
 
 def get_players_score_from_api(
     team_dict: dict[str, dict[str, str]]
@@ -24,11 +66,12 @@ def get_players_score_from_api(
     :team_dict: dict[name:{'omeda_id':str}]
     :return dictianary {name : {'omeda_id':str, 'player_ps': float}
     """
-    DATA_FOR_EXTRACTION = "avg_performance_score"
     
+
+    #TODO: убрать дублирование проверок с fetch_api_data
     for player, player_info in team_dict.items():
         try:
-            response = requests.get(f"{BASE_OMEDA_ADRESS}{player_info['omeda_id']}/statistics.json")
+            response = fetch_api_data(player_info['omeda_id'])
             if response.status_code == 200:
                 api_data = response.json()
                 logger.debug(f"API data for {player}:\n{api_data}")

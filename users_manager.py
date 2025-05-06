@@ -1,8 +1,10 @@
 import logging
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import create_engine, Column, BigInteger, Integer, String, Index
+from sqlalchemy import create_engine, Column, BigInteger, Integer, Float, String, Index
 from sqlalchemy.orm import sessionmaker
 from threading import Lock
+
+import ps_data_manager as pdm
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +21,12 @@ class UsersModel(Base):
     chat_id = Column(BigInteger, nullable=False, index=True)
     name = Column(String(NAME_LEN), nullable=False)
     omeda_id = Column(String(OMEDA_ID_LEN), nullable=False)
+    player_ps_day = Column(Float, nullable=False)
 
 
 
 # Контроллер для CRD пользователей в БД
-class UsersСontroller:
+class UsersController:
     _instance = None
     _lock = Lock()
 
@@ -54,7 +57,7 @@ class UsersСontroller:
         omeda_id: str, 
         chat_id: str):
         """
-        Добавляет нового игрока в базу данных
+        Добавляет нового игрока в базу данных. +парсит его PS
         
         Args:
             name (str): Никнейм игрока (макс. 25 символов)
@@ -68,6 +71,7 @@ class UsersСontroller:
             ValueError: Если данные не соответствуют ограничениям
             sqlalchemy.exc.SQLAlchemyError: При ошибках БД
         """
+        player_ps = pdm.get_player_ps(omeda_id)
 
         # Валидация
         if len(name) > UsersModel.NAME_LEN:
@@ -76,12 +80,14 @@ class UsersСontroller:
             raise ValueError(f"Omeda_id должен быть не более {UsersModel.OMEDA_ID_LEN} символов")
         
        
+       
         session = self.Session()
         try:
             new_user = UsersModel(
                 name=name,
                 omeda_id=omeda_id,
-                chat_id=chat_id
+                chat_id=chat_id,
+                player_ps_day=player_ps,
             )
 
             session.add(new_user)
