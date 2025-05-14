@@ -1,7 +1,10 @@
 import logging
-from sqlalchemy.orm import declarative_base
-from sqlalchemy import create_engine, Column, BigInteger, Integer, Float, String, Index
-from sqlalchemy.orm import sessionmaker
+import asyncio
+from sqlalchemy import (
+    create_engine, Column, BigInteger, Integer, Float, String, Index,
+    select, update, bindparam
+    )
+from sqlalchemy.orm import sessionmaker, declarative_base
 from threading import Lock
 
 import ps_data_manager as pdm
@@ -102,16 +105,17 @@ class UsersController:
         finally:
             session.close()
     
-    def get_chat_users_and_omeda_id(self, chat_id: int):
+    def get_users_and_omeda_id(self, chat_id: int = 0) -> dict[str, dict[str, str| int]] :
         """
-        Возвращает словарь пользователей указанного чата.
+        Возвращает словарь пользователей указанного чата, либо для всех
+        пользователей если чат не указан
 
         Args:
             chat_id (int): Идентификатор чата.
 
         Returns:
-            dict[str, dict[str, str]]: Словарь, где ключом является имя 
-            пользователя, а значением — словарь с Omeda ID пользователя.
+            dict[str, dict[str, str| int]]: Словарь, где ключом является имя 
+            пользователя, а значением — словарь с bd_id(в БД) и Omeda ID пользователя.
 
         Raises:
             Exception: Если не удалось получить данные пользователей из БД.
@@ -119,13 +123,64 @@ class UsersController:
         
         with self.Session() as session:
             try:
-                users = session.query(UsersModel).filter_by(chat_id=chat_id).all()
-                team_dict = {user.name: {'omeda_id': user.omeda_id} for user in users}
+                if chat_id == 0:
+                    stmt = select(
+                        UsersModel.name, 
+                        UsersModel.omeda_id, 
+                        UsersModel.id
+                        )
+                    users = session.execute(stmt)
+                else:
+                    stmt = select(
+                        UsersModel.name, 
+                        UsersModel.omeda_id,
+                        UsersModel.id
+                        ).where(UsersModel.chat_id==chat_id)
+                    users = session.execute(stmt)                
+
+                team_dict = {user.name: {'bd_id': user.id, 'omeda_id': user.omeda_id} for user in users}
                 logger.debug(f"Team dict: {team_dict}")
                 return team_dict
+
             except Exception as e:
-                logger.info("Не удалось получть данные пользователей из БД")
+                logger.error("Не удалось получть данные пользователей из БД")
                 raise e
+
+   
+    async def update_player_ps_day(self, users_dict: dict[str, dict[str, int | float]]):
+        """
+        Заменяем значения столбца player_ps_day в БД ps_data.db
+        Вид принимаемого аргумента - name : {'bd_id':int, 'player_ps': float}
+        """
+        #TODO вынести в отдельную функцию
+        users_to_update = [
+            {
+                'id': user_data['bd_id'],
+                'player_ps_day': user_data['player_ps']
+                }
+                for user_data in users_dict.values()
+        ]
+        logger.debug(f"users_to_update: {users_to_update}")
+
+        with self.Session() as session:
+            try:
+                stmt = (
+                    update(UsersModel)
+                    # .where(UsersModel.id == bindparam('bd_id'))
+                    # .values(player_ps_day = bindparam('player_ps_day'))
+                    # .execution_options(synchronize_session=False)
+                )
+
+                session.execute(stmt, users_to_update)
+                session.commit()
+            
+            except Exception as e:
+                session.rollback()
+                logger.error(f"Обновление player_ps_day не удалось. Exception: {e}")
+        
+        return
+               
+
 
 
 

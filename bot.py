@@ -1,4 +1,5 @@
 import asyncio
+import aiocron
 import logging
 from aiogram import Bot, Dispatcher, types ,F
 from aiogram.filters.command import Command
@@ -40,6 +41,10 @@ dp = Dispatcher()
 # колбэк, инлайн-запрос, платёж, добавление 
 # бота в группу и т.д. 
 
+@aiocron.crontab('* 4 * * *')
+async def daily_update():
+    await pdm.player_ps_day_db_update()
+
 #тестовый хендлер
 @dp.message(Command("t"))
 async def cmd_ps_rec_start(message: types.Message):
@@ -48,9 +53,9 @@ async def cmd_ps_rec_start(message: types.Message):
 
     await message.answer(f"{sorted_team_data}")
 
-@dp.message(Command("test_db2"))
-async def cmd_ps_rec_start(message: types.Message):
-    pdm.get_team_ps(message.chat.id)
+@dp.message(Command("tdb"))
+async def cmd_tdb(message: types.Message):
+    await pdm.player_ps_day_db_update()
     await message.answer("YEAH2")
 
 # Хэндлер на команду /ps
@@ -176,7 +181,6 @@ async def cancel_handler(callback: types.CallbackQuery, state: FSMContext):
         )
         await state.clear()
     await callback.answer()
-
 
 
 async def main():

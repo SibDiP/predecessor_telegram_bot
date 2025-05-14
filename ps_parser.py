@@ -3,7 +3,7 @@ import requests
 #from bs4 import BeautifulSoup
 #from fake_useragent import UserAgent
 import logging
-import schedule
+
 from time import sleep
 
 import ps_data_manager
@@ -58,18 +58,18 @@ def get_player_ps_from_api(omeda_id: str) -> float:
 
 
 def get_players_score_from_api(
-    team_dict: dict[str, dict[str, str]]
+    users_dict: dict[str, dict[str, str]]
     ) -> dict[str, dict[str, str | float]]:
     """
     Get average ps value for players from API object and return it 
     as a dictioary with range by score
-    :team_dict: dict[name:{'omeda_id':str}]
+    :users_dict: dict[name:{'omeda_id':str}]
     :return dictianary {name : {'omeda_id':str, 'player_ps': float}
     """
     
 
     #TODO: убрать дублирование проверок с fetch_api_data
-    for player, player_info in team_dict.items():
+    for player, player_info in users_dict.items():
         try:
             response = fetch_api_data(player_info['omeda_id'])
             if response.status_code == 200:
@@ -87,10 +87,10 @@ def get_players_score_from_api(
             logger.info(f"Ошибка парсинга, {player}. {e}")
             player_ps = 0
 
-    logger.debug(f"Team_dict: {team_dict}")
+    logger.debug(f"Team_dict(get_players_score_from_api()): {users_dict}")
     logger.info("Data Parsing: Success")
 
-    return team_dict
+    return users_dict
 
 # TODO: всё что ниже переделать
 
@@ -100,13 +100,15 @@ def ps_from_api_to_db():
         get_players_score_from_api()))
     logger.info("Today data saving in db: Success")
 
-def schedule_every_day():
-    # TODO add condition for longer sleep time
-    schedule.every().day.at("21:50").do(ps_from_api_to_db)
-    while True:
-        schedule.run_pending()
-        logger.debug("Чекнул")
-        sleep(50)
+
+# РАБОТАЕМ ТУТ
+# def schedule_every_day():
+#     # TODO add condition for longer sleep time
+#     schedule.every().day.at("21:50").do(ps_from_api_to_db)
+#     while True:
+#         schedule.run_pending()
+#         logger.debug("Чекнул")
+#         sleep(50)
 
 # def get_players_score_form_bs() -> dict[str, float]:
 #     """

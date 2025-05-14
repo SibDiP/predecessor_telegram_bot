@@ -3,6 +3,8 @@ import pandas as pd
 import logging
 import sqlite3
 
+import aiohttp
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
 from users_manager import UsersModel, UsersController
 import ps_parser
@@ -11,6 +13,28 @@ import ps_parser
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 uc = UsersController()
+
+async def player_ps_day_db_update():
+    """
+    Сборная функция для ежедневного обновления PS в датабазе.
+    """
+    
+    users_dict = uc.get_users_and_omeda_id()
+    # return dict[name:{'bd_id': int, 'omeda_id':str}] 
+    new_ps = ps_parser.get_players_score_from_api(users_dict)
+    # return {name : {'bd_id': int, 'omeda_id':str, 'player_ps': float}
+
+    #TODO место для записи ps в историю ps
+    
+    await uc.update_player_ps_day(new_ps)
+
+    return None
+
+
+    
+
+    
+    
 
 def add_player_to_db(player_name: str, omeda_id: str, chat_id: int):
     uc.add_player(player_name, omeda_id, chat_id)
@@ -25,7 +49,7 @@ def get_team(chat_id: int) -> dict:
     Возвращает словарь {name:{omeda_id},}
     """
     try:
-        return uc.get_chat_users_and_omeda_id(chat_id)
+        return uc.get_users_and_omeda_id(chat_id)
     except Exception as e:
         logger.info(f"Проблемы с импортом игроков из БД: {e}")
 
@@ -85,6 +109,7 @@ def make_score_prety(team_dict: dict[str, dict[str, str | float]]) -> str:
     medals_counter = 0
     
     for player, player_data in team_dict.items():
+        logger.debug(f"MAKE PRETY:\nplayer:{player}, player_data:{player_data}")
         pretty_ps = f'{player_data['player_ps']:0>6.2f}'
 
         pretty_player_score += f'\n{pretty_ps} | {medals[medals_counter]} | <a href="{OMEDA_PROFILE_ADRESS}{player_data['omeda_id']}">{player}</a>' 
