@@ -52,35 +52,34 @@ class Analitic:
     # TODO! - works, bud awful. Ошибка. Странно согласуются аргументы
     # в функции и аргументы класса. Виимо где то пробрасываются.
     def difference_players_score_records(
-        data_start: Optional[dict[str, float]] = None,
-        data_end: Optional[dict[str, float]] = None,
+        data_start: dict[str, dict[str, str| int |float]],
+        data_end: dict[str, dict[str, str| int |float]],
     ) -> str:
 
-        if not Analitic.players_score_start:
-            return "Стартовый PS отсутсвует"
-
-        Analitic.setter_players_score_end(ps_parser.get_players_score_from_api())
 
         result_string = ""
         up_down_neutral_emoji = ("🟢","🔴","🟡")
         compare_index : int = None
         compare_difference : float = None
+        BASE_OMEDA_ADRESS = "https://omeda.city/players/"
 
+        # loop through Analitic.players_score_end
+        for player, player_data in data_end.items():
+            logger.debug(data_start)
+            current_ps = data_start[player]['player_ps_day']
+            next_ps = player_data['player_ps']
+            
+            compare_difference = abs(next_ps - current_ps)
 
-        # loop throug Analitic.players_score_end
-        for player, score in Analitic.players_score_end.items():
-            compare_difference = abs(Analitic.players_score_end[player] - Analitic.players_score_start[player])
-
-            if Analitic.players_score_end[player] > Analitic.players_score_start[player]:
+            if next_ps > current_ps:
                 compare_index = 0
-            elif Analitic.players_score_end[player] < Analitic.players_score_start[player]:
+            elif next_ps < current_ps:
                 compare_index = 1
-            elif Analitic.players_score_end[player] == Analitic.players_score_start[player]:
+            elif next_ps == current_ps:
                 compare_index = 2
 
             #formatted_str = f"{number:06.2f}"
-            result_string += f"""{Analitic.players_score_end[player]:0>6.2f} | {up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | {player[:14]}\n"""
-        
+            result_string += f"""{next_ps:0>6.2f} | {up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | <a href="{BASE_OMEDA_ADRESS}{player_data['omeda_id']}">{player[:14]}</a>\n""" 
         return  result_string
 
 def make_score_prety(players_score : dict[str, float]) -> str:

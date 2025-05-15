@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import logging
 import sqlite3
+from ps_analitic_tools import Analitic
 
 import aiohttp
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,12 +30,6 @@ async def player_ps_day_db_update():
     await uc.update_player_ps_day(new_ps)
 
     return None
-
-
-    
-
-    
-    
 
 def add_player_to_db(player_name: str, omeda_id: str, chat_id: int):
     uc.add_player(player_name, omeda_id, chat_id)
@@ -127,6 +122,26 @@ def make_score_prety(team_dict: dict[str, dict[str, str | float]]) -> str:
     logger.info("Make score pretty: Success")
 
     return pretty_player_score 
+
+def players_ps_delta(chat_id:int) -> str:
+    """
+    Принимает chat_id
+    Отдаёт отформатированный str ответ для чата
+    """
+    current = uc.get_users_and_omeda_id(chat_id)
+    new = sort_players_by_score(get_team_ps(chat_id))
+
+    logger.debug(f"DELTA_START: {current}")
+    logger.debug(f"DELTA_END: {new}")
+    delta = Analitic.difference_players_score_records(current, new)
+    return delta
+
+
+
+
+
+
+
 
 
 # Всё, что ниже, требует конкретного перелапачивания.

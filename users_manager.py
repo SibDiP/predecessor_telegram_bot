@@ -34,6 +34,7 @@ class UsersController:
     _lock = Lock()
 
     def __new__(cls):
+
         """
         Проверка на существование объекта класса и создание синглтона
         """
@@ -115,7 +116,10 @@ class UsersController:
 
         Returns:
             dict[str, dict[str, str| int]]: Словарь, где ключом является имя 
-            пользователя, а значением — словарь с bd_id(в БД) и Omeda ID пользователя.
+            пользователя, а значением — словарь с 
+            bd_id(в БД)
+            Omeda ID пользователя
+            player_ps_day
 
         Raises:
             Exception: Если не удалось получить данные пользователей из БД.
@@ -127,18 +131,25 @@ class UsersController:
                     stmt = select(
                         UsersModel.name, 
                         UsersModel.omeda_id, 
-                        UsersModel.id
+                        UsersModel.id,
+                        UsersModel.player_ps_day
                         )
                     users = session.execute(stmt)
                 else:
                     stmt = select(
                         UsersModel.name, 
                         UsersModel.omeda_id,
-                        UsersModel.id
+                        UsersModel.id,
+                        UsersModel.player_ps_day
                         ).where(UsersModel.chat_id==chat_id)
                     users = session.execute(stmt)                
 
-                team_dict = {user.name: {'bd_id': user.id, 'omeda_id': user.omeda_id} for user in users}
+                team_dict = {
+                    user.name: {
+                        'bd_id': user.id, 
+                        'omeda_id': user.omeda_id, 
+                        'player_ps_day': user.player_ps_day
+                        } for user in users}
                 logger.debug(f"Team dict: {team_dict}")
                 return team_dict
 
@@ -166,9 +177,6 @@ class UsersController:
             try:
                 stmt = (
                     update(UsersModel)
-                    # .where(UsersModel.id == bindparam('bd_id'))
-                    # .values(player_ps_day = bindparam('player_ps_day'))
-                    # .execution_options(synchronize_session=False)
                 )
 
                 session.execute(stmt, users_to_update)

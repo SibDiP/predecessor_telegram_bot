@@ -53,20 +53,9 @@ async def cmd_ps_rec_start(message: types.Message):
 
     await message.answer(f"{sorted_team_data}")
 
-@dp.message(Command("tdb"))
-async def cmd_tdb(message: types.Message):
-    await pdm.player_ps_day_db_update()
-    await message.answer("YEAH2")
-
-# Хэндлер на команду /ps
-@dp.message(Command("ps"))
-async def cmd_ps(message: types.Message):
-    team_data = pdm.get_team_ps(message.chat.id)
-    sorted_team_data = pdm.sort_players_by_score(team_data)
-
-
-    await message.answer(
-        pdm.make_score_prety(sorted_team_data),
+@dp.message(Command("delta"))
+async def cmd_delta(message: types.Message):
+    await message.answer(pdm.players_ps_delta(message.chat.id),
         parse_mode='HTML',
         disable_web_page_preview=True)
 
@@ -80,6 +69,22 @@ async def cmd_ps_rec_start(message: types.Message):
 async def cmd_ps_rec_result(message: types.Message):
     await message.answer(
         Analitic.difference_players_score_records())
+
+# Хэндлер на команду /ps
+@dp.message(Command("ps"))
+async def cmd_ps(message: types.Message):
+    team_data = pdm.get_team_ps(message.chat.id)
+    sorted_team_data = pdm.sort_players_by_score(team_data)
+
+
+    await message.answer(
+        pdm.make_score_prety(sorted_team_data),
+        parse_mode='HTML',
+        disable_web_page_preview=True)
+
+
+
+
 
 # Запуск процесса поллинга новых апдейтов
 async def main():
