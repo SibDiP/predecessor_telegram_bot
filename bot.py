@@ -58,6 +58,9 @@ async def cmd_delta(message: types.Message):
     """
     try:
         delta_data = pdm.players_ps_delta(message.chat.id)
+        if delta_data is None:
+            await message.answer("Нет зарегистрированных пользователей. Используйте команду /add_player")
+            return
 
         await message.answer((delta_data),
         parse_mode='HTML',
@@ -158,14 +161,20 @@ async def process_add_player_name(message: types.Message, state: FSMContext, bot
     data = await state.get_data()
 
     if message.from_user.id != data['user_id']:
-        await message.answer("Подождите завершения процесса добавления игрока")
-        return
+       await message.answer("Подождите завершения процесса добавления игрока")
+       return
     
     # Удаляем кнопку из предыдущего сообщения
     await remove_inline_buttons(message.chat.id, data['messages'], bot)
     
+    if not pdm.is_valid_name(message.text):
+        await message.answer("Никнейм может содержать не более 25 символов")
+        return
+
     await state.update_data(player_name=message.text)
-    #TODO валидация omeda_id
+    
+    
+
     msg = await message.answer(
         "Введите Omeda ID игрока (https://omeda.city/players/{omeda_id}):",
         reply_markup=get_cancel_inline_keyboard()
@@ -181,8 +190,8 @@ async def process_add_player_omeda_id(message: types.Message, state: FSMContext,
     """
     data = await state.get_data()
 
-    if message.from_user.id != data['user_id']:
-        await message.answer("Подождите завершения процесса.")
+    if not await pdm.is_valid_omeda_id(message.text):
+        await message.answer("Не корректный Omeda_id. Введите корректный или отмените операцию")
         return
     
     # Удаляем все инлайн-кнопки

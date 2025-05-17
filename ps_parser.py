@@ -4,10 +4,6 @@ import requests
 #from fake_useragent import UserAgent
 import logging
 
-from time import sleep
-
-import ps_data_manager
-import users_manager # users_manager тепреь
 
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -94,11 +90,11 @@ def get_players_score_from_api(
 
 # TODO: всё что ниже переделать
 
-def ps_from_api_to_db():
-    ps_data_manager.write_df_to_sql_database(
-    ps_data_manager.convert_ps_to_pd_dataframe(
-        get_players_score_from_api()))
-    logger.info("Today data saving in db: Success")
+# def ps_from_api_to_db():
+#     ps_data_manager.write_df_to_sql_database(
+#     ps_data_manager.convert_ps_to_pd_dataframe(
+#         get_players_score_from_api()))
+#     logger.info("Today data saving in db: Success")
 
 
 # РАБОТАЕМ ТУТ

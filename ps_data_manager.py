@@ -123,24 +123,64 @@ def make_score_prety(team_dict: dict[str, dict[str, str | float]]) -> str:
 
     return pretty_player_score 
 
-def players_ps_delta(chat_id:int) -> str:
+def players_ps_delta(chat_id:int) -> str | None:
     """
     Принимает chat_id
     Отдаёт отформатированный str ответ для чата
     """
+    
     current = uc.get_users_and_omeda_id(chat_id)
+    if is_chat_users_empty(current):
+        return None
+
     new = sort_players_by_score(get_team_ps(chat_id))
 
     logger.debug(f"DELTA_START: {current}")
     logger.debug(f"DELTA_END: {new}")
     delta = Analitic.difference_players_score_records(current, new)
+    
     return delta
 
+async def is_valid_omeda_id(omeda_id:str) -> bool:
+    """
+    Проверяет ответ omda API по заданному omeda_id.
 
+    Arg:
+    omeda_id: str 
 
+    Return: bool 
+    """
 
+    if ps_parser.fetch_api_data(omeda_id) is None:
+        return False
+    else:
+        return True
 
+def is_valid_name(name:str) -> bool:
+    """
+    Проверяет длинну введённого никнейма. Может быть не более 25 символов
+    (ограничение ДБ в UsersModel)
 
+    Arg:
+    name:str 
+
+    Return: bool
+    """
+
+    if len(name) > UsersModel.NAME_LEN:
+        return False
+    else:
+        return True
+
+def is_chat_users_empty(users_dict: dict) -> bool:
+    """
+    Проверяет не пуст ли словарь. True - пустой, False - пустой
+    """
+
+    if not users_dict:
+        return True
+    else:
+        False
 
 
 
