@@ -1,4 +1,5 @@
 import requests
+import json
 
 #from bs4 import BeautifulSoup
 #from fake_useragent import UserAgent
@@ -25,7 +26,7 @@ def fetch_api_data(omeda_id: str, target_json: str = "s") -> requests.Response:
     """
     API_ENDPOINTS = {
         's': "/statistics.json",
-        'm': "/matches.json",
+        'm': "/matches.json?per_page=1",
         # "i": "/items.json",
     }
     try:
@@ -37,11 +38,12 @@ def fetch_api_data(omeda_id: str, target_json: str = "s") -> requests.Response:
             logger.info(f"Get API response for {omeda_id}: Success")
             return response
 
-        logger.info(f"Data extraction: API/GET erorr {response.status_code}, URL:{url}")   
+        logger.error(f"Data extraction: API/GET erorr {response.status_code}, URL:{url}") 
+        #None - используется для обработки ошибок и ответа пользователю в чате  
         return None
 
     except Exception as e:
-        logger.info(f"Ошибка парсинга: {e}") 
+        logger.error(f"Ошибка парсинга: {e}") 
     
     
 
@@ -50,8 +52,6 @@ def get_player_ps_from_api(omeda_id: str) -> float:
     api_data = response.json() 
     player_ps = round(api_data[DATA_FOR_EXTRACTION], 2)
     return player_ps
-
-
 
 def get_players_score_from_api(
     users_dict: dict[str, dict[str, str]]
@@ -87,6 +87,64 @@ def get_players_score_from_api(
     logger.info("Data Parsing: Success")
 
     return users_dict
+
+def get_players_last_match_ps(team_dict: dict[str, dict[str, str | int | float]]) -> None:
+    """
+    Добавляет во вложеннный словарь пару ключ-значение 'last_match_ps': float
+
+    Arg: 
+        team_dict: dict[str, dict[str, str | int | float]] словарь с
+        пользователями и информацией о них
+    
+    Return:
+        None. Изменяется сам словарь (добавляется "last_mathc_ps")
+    """
+    try:
+        for player, player_data in team_dict.items():
+            omeda_id = player_data['omeda_id']
+
+            last_match_ps = get_last_match_ps_from_json(omeda_id)
+            player_data['last_match_ps'] = last_match_ps
+        
+        logger.debug(f"get_player_last_match_ps, dict: {team_dict}")
+        return None
+    except Exception as e:
+        logger.error(f"get_player_last_match_ps: {e}")
+        return None
+
+def get_last_match_ps_from_json(omeda_id: str) -> float:
+    """
+    Возвращает last_match_ps для перерданного omeda_id
+
+    Arg:
+        omeda_id: str
+    
+    Return:
+        last_match_ps: float
+    """
+    
+    response = fetch_api_data(omeda_id, "m")
+    api_data = response.json()
+    logger.debug(f"get_last_match_ps_from_json, api_data: {api_data}")
+
+    try:
+        for match in api_data.get('matches', []):
+            for player in match.get('players', []):
+                if player.get('id') == omeda_id:
+                    last_game_performance_score = round(
+                        player.get('performance_score'), 2)
+                    logger.debug(f"{get_last_match_ps_from_json.__name__} last_game_performance_score: {last_game_performance_score}")
+                    return last_game_performance_score
+                
+    except Exception as e:
+        logger.error(f"{get_last_match_ps_from_json.__name__} ошибка!: {e}")
+        last_game_performance_score = 0
+        return last_game_performance_score
+        
+
+
+    
+
 
 # TODO: всё что ниже переделать
 

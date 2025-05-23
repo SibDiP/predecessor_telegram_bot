@@ -49,13 +49,10 @@ class Analitic:
         
 
     @staticmethod
-    # TODO! - works, bud awful. Ошибка. Странно согласуются аргументы
-    # в функции и аргументы класса. Виимо где то пробрасываются.
     def difference_players_score_records(
         data_start: dict[str, dict[str, str| int |float]],
         data_end: dict[str, dict[str, str| int |float]],
     ) -> str:
-
 
         result_string = ""
         up_down_neutral_emoji = ("🟢","🔴","🟡")
@@ -65,9 +62,10 @@ class Analitic:
 
         # loop through Analitic.players_score_end
         for player, player_data in data_end.items():
-            logger.debug(data_start)
+            logger.debug(f"difference_players_score_records, data_start: {data_start}")
             current_ps = data_start[player]['player_ps_day']
             next_ps = player_data['player_ps']
+            last_match_ps = data_start[player]['last_match_ps']
             
             compare_difference = abs(next_ps - current_ps)
 
@@ -78,8 +76,14 @@ class Analitic:
             elif next_ps == current_ps:
                 compare_index = 2
 
+
             #formatted_str = f"{number:06.2f}"
-            result_string += f"""{next_ps:0>6.2f} | {up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | <a href="{BASE_OMEDA_ADRESS}{player_data['omeda_id']}">{player[:14]}</a>\n""" 
+            result_string += (
+                f"{next_ps:0>6.2f} | " +
+                f"{up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | " +
+                f"{last_match_ps:0>6.2f} | " +
+                f'''<a href="{BASE_OMEDA_ADRESS}{player_data['omeda_id']}">{player[:13]}</a>\n'''
+                )
         return  result_string
 
 def make_score_prety(players_score : dict[str, float]) -> str:

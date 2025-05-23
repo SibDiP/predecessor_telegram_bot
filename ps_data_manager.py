@@ -126,10 +126,21 @@ def make_score_prety(team_dict: dict[str, dict[str, str | float]]) -> str:
 def players_ps_delta(chat_id:int) -> str | None:
     """
     Принимает chat_id
-    Отдаёт отформатированный str ответ для чата
+    Отдаёт отформатированный str ответ для чата, либо None если в БД ps_data 
+    нет пользователей.
+
+    Arg:
+        chat_id: int
+    
+    Return:
+        str - в случае успеха
+        None - если для данного chat_id нет записей в ps_data.db
     """
     
     current = uc.get_users_and_omeda_id(chat_id)
+    ps_parser.get_players_last_match_ps(current)
+    logger.debug(f"pdm, players_ps_delta(), словарь с last_match_ps: {current}")
+
     if is_chat_users_empty(current):
         return None
 
@@ -137,6 +148,7 @@ def players_ps_delta(chat_id:int) -> str | None:
 
     logger.debug(f"DELTA_START: {current}")
     logger.debug(f"DELTA_END: {new}")
+
     delta = Analitic.difference_players_score_records(current, new)
     
     return delta
