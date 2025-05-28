@@ -25,6 +25,9 @@ class UsersModel(Base):
     name = Column(String(NAME_LEN), nullable=False)
     omeda_id = Column(String(OMEDA_ID_LEN), nullable=False)
     player_ps_day = Column(Float, nullable=False)
+    __table_args__ = (
+        Index('idx_chat_id_name', 'chat_id', 'name'),
+    )
 
 
 
@@ -59,7 +62,7 @@ class UsersController:
     def add_player(self,
         name: str, 
         omeda_id: str, 
-        chat_id: str):
+        chat_id: int): 
         """
         Добавляет нового игрока в базу данных. +парсит его PS
         
@@ -106,7 +109,8 @@ class UsersController:
         finally:
             session.close()
     
-    def get_users_and_omeda_id(self, chat_id: int = 0) -> dict[str, dict[str, str| int]] :
+    def get_users_and_omeda_id(self, chat_id: int = 0
+    ) -> dict[str, dict[str, str| int]]:
         """
         Возвращает словарь пользователей указанного чата, либо для всех
         пользователей если чат не указан
@@ -127,22 +131,16 @@ class UsersController:
         
         with self.Session() as session:
             try:
-                if chat_id == 0:
-                    stmt = select(
-                        UsersModel.name, 
-                        UsersModel.omeda_id, 
-                        UsersModel.id,
-                        UsersModel.player_ps_day
-                        )
-                    users = session.execute(stmt)
-                else:
-                    stmt = select(
-                        UsersModel.name, 
-                        UsersModel.omeda_id,
-                        UsersModel.id,
-                        UsersModel.player_ps_day
-                        ).where(UsersModel.chat_id==chat_id)
-                    users = session.execute(stmt)                
+                stmt = select(
+                    UsersModel.name, 
+                    UsersModel.omeda_id, 
+                    UsersModel.id,
+                    UsersModel.player_ps_day
+                )
+                if chat_id != 0:
+                    stmt = stmt.where(UsersModel.chat_id == chat_id)
+            
+                users = session.execute(stmt)
 
                 team_dict = {
                     user.name: {
@@ -158,7 +156,8 @@ class UsersController:
                 raise e
 
    
-    async def update_player_ps_day(self, users_dict: dict[str, dict[str, int | float]]):
+    async def update_player_ps_day(self, users_dict: 
+        dict[str, dict[str, int | float]]):
         """
         Заменяем значения столбца player_ps_day в БД ps_data.db
         Вид принимаемого аргумента - name : {'bd_id':int, 'player_ps': float}
@@ -167,9 +166,9 @@ class UsersController:
         users_to_update = [
             {
                 'id': user_data['bd_id'],
-                'player_ps_day': user_data['player_ps']
-                }
-                for user_data in users_dict.values()
+                'player_ps_day': user_data['player_ps_day']
+            }
+            for user_data in users_dict.values()
         ]
         logger.debug(f"users_to_update: {users_to_update}")
 
@@ -177,6 +176,8 @@ class UsersController:
             try:
                 stmt = (
                     update(UsersModel)
+                    .where(UsersModel.id == bindparam('id'))
+                    .values(player_ps_day=bindparam('player_ps_day'))
                 )
 
                 session.execute(stmt, users_to_update)

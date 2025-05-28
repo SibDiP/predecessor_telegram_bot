@@ -1,5 +1,6 @@
 import os
 import logging
+import traceback
 from dotenv import load_dotenv
 
 import aiocron
@@ -57,7 +58,7 @@ async def cmd_delta(message: types.Message):
     Возвращает сообщение c измененеием PS для участников чата
     """
     try:
-        delta_data = pdm.players_ps_delta(message.chat.id)
+        delta_data = await pdm.players_ps_delta(message.chat.id)
         if delta_data is None:
             await message.answer("Нет зарегистрированных пользователей. Используйте команду /add_player")
             return
@@ -68,6 +69,7 @@ async def cmd_delta(message: types.Message):
     
     except Exception as e:
         logger.error(f"cmd_delta(): {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         await message.answer("Ошибка дельты PS. Убедитесь, что добавлен хотя бы один игрок")
 
 @dp.message(Command("ps"))
@@ -76,7 +78,7 @@ async def cmd_ps(message: types.Message):
     Возвращает таблицу PS для участников чата
     """
     try:
-        team_data = pdm.get_team_ps(message.chat.id)
+        team_data = await pdm.get_team_ps(message.chat.id)
         sorted_team_data = pdm.sort_players_by_score(team_data)
 
         await message.answer(

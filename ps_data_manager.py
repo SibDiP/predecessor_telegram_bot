@@ -22,7 +22,7 @@ async def player_ps_day_db_update():
     
     users_dict = uc.get_users_and_omeda_id()
     # return dict[name:{'bd_id': int, 'omeda_id':str}] 
-    new_ps = ps_parser.get_players_score_from_api(users_dict)
+    new_ps = await ps_parser.get_players_score_from_api(users_dict)
     # return {name : {'bd_id': int, 'omeda_id':str, 'player_ps': float}
 
     #TODO место для записи ps в историю ps
@@ -48,7 +48,7 @@ def get_team(chat_id: int) -> dict:
     except Exception as e:
         logger.info(f"Проблемы с импортом игроков из БД: {e}")
 
-def get_team_ps(chat_id: int) -> dict:
+async def get_team_ps(chat_id: int) -> dict:
     """
     Возвращает словарь {name: dict{'omeda_id':str, 'player_ps': int}}
 
@@ -63,9 +63,11 @@ def get_team_ps(chat_id: int) -> dict:
         Exception: Если не удалось cпарсить данные с API omeda
     """
     team = get_team(chat_id)
+
     try:
-        team_ps = ps_parser.get_players_score_from_api(team)
-        return team_ps
+        team_ps_dict = await ps_parser.get_players_score_from_api(team)
+        return team_ps_dict
+
     except Exception as e:
         logger.info(f"Проблемы с парсингом PS: {e}")
         return {'Беда':0}
@@ -123,7 +125,7 @@ def make_score_prety(team_dict: dict[str, dict[str, str | float]]) -> str:
 
     return pretty_player_score 
 
-def players_ps_delta(chat_id:int) -> str | None:
+async def players_ps_delta(chat_id:int) -> str | None:
     """
     Принимает chat_id
     Отдаёт отформатированный str ответ для чата, либо None если в БД ps_data 
@@ -137,19 +139,19 @@ def players_ps_delta(chat_id:int) -> str | None:
         None - если для данного chat_id нет записей в ps_data.db
     """
     
-    current = uc.get_users_and_omeda_id(chat_id)
-    ps_parser.get_players_last_match_ps(current)
-    logger.debug(f"pdm, players_ps_delta(), словарь с last_match_ps: {current}")
+    data_from_db = uc.get_users_and_omeda_id(chat_id)
+    await ps_parser.get_players_last_match_ps(data_from_db)
+    logger.debug(f"pdm, players_ps_delta(), словарь с last_match_ps: {data_from_db}")
 
-    if is_chat_users_empty(current):
+    if is_chat_users_empty(data_from_db):
         return None
 
-    new = sort_players_by_score(get_team_ps(chat_id))
+    new_data_from_api = sort_players_by_score(await get_team_ps(chat_id))
 
-    logger.debug(f"DELTA_START: {current}")
-    logger.debug(f"DELTA_END: {new}")
+    logger.debug(f"DELTA_START: {data_from_db}")
+    logger.debug(f"DELTA_END: {new_data_from_api}")
 
-    delta = Analitic.difference_players_score_records(current, new)
+    delta = Analitic.difference_players_score_records(data_from_db, new_data_from_api)
     
     return delta
 
