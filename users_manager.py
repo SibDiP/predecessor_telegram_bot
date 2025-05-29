@@ -1,6 +1,6 @@
 import logging
 import traceback
-import asyncio
+
 from sqlalchemy import (
     create_engine, Column, BigInteger, Integer, Float, String, Index,
     select, delete, update, bindparam
@@ -56,7 +56,7 @@ class UsersController:
     
             self.engine = create_engine('sqlite:///ps_data.db')
             Base.metadata.create_all(self.engine)
-            logger.info(f"Users base creation: Success")
+            logger.info("Users base creation: Success")
 
             self.Session = sessionmaker(bind=self.engine)
 
@@ -130,8 +130,6 @@ class UsersController:
                 session.rollback()
                 raise e
 
-
-
     def get_users_and_omeda_id(self, chat_id: int = 0
     ) -> dict[str, dict[str, str| int]]:
         """
@@ -172,6 +170,7 @@ class UsersController:
                         'player_ps_day': user.player_ps_day
                         } for user in users}
                 logger.debug(f"Team dict: {team_dict}")
+                logger.info(f"chat_id: {chat_id}. Получили данные пользователей из БД")
                 return team_dict
 
             except Exception as e:
@@ -212,25 +211,6 @@ class UsersController:
         
         return
                
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @staticmethod
-    def remove_player(name):
-        pass
-
-
 class Player:
     def __init__(self, name, omeda_id):
         self.name = name

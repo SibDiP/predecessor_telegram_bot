@@ -1,5 +1,4 @@
 import requests
-import json
 
 import asyncio
 import aiohttp
@@ -53,6 +52,7 @@ async def fetch_api_data(omeda_id: str, target_json: str = "s"
     except Exception as e:
         logger.error(f"Ошибка парсинга: {e}")
         logger.error(traceback.format_exc())
+        raise e
         return None
     
 async def get_player_ps_from_api(omeda_id: str) -> float:
@@ -75,12 +75,9 @@ async def get_players_score_from_api(
     Returns:
         dict: {name : {'omeda_id':str, 'player_ps': float}}.
     """
-    
-
-    #TODO: убрать дублирование проверок с fetch_api_data
     # Создаём список задач для асинхронного выполнения
     tasks = []
-
+    
     for player, player_info in users_dict.items():
         task = fetch_api_data(player_info['omeda_id'])
         tasks.append((player, task))
@@ -106,55 +103,6 @@ async def get_players_score_from_api(
     logger.info("Data Parsing: Success")
 
     return users_dict
-
-    # for player, player_info in users_dict.items():
-    #     try:         
-
-    #         response = fetch_api_data(player_info['omeda_id'])
-
-    #         if response.status_code == 200:
-    #             api_data = response
-    #             logger.debug(f"API data for {player}:\n{api_data}")
-    #             logger.info(f"Get API data for {player}: Success")
-
-    #             player_ps = round(api_data[DATA_FOR_EXTRACTION], 2)
-    #             player_info['player_ps'] = player_ps
-
-    #         else:
-    #             logger.info(f"Data extraction: API/GET erorr {response.status_code}")   
-        
-    #     except Exception as e:
-    #         logger.info(f"Ошибка парсинга, {player}. {e}")
-    #         player_ps = 0
-
-    # logger.debug(f"Team_dict(get_players_score_from_api()): {users_dict}")
-    # logger.info("Data Parsing: Success")
-
-
-# Вроде не нужно. Использовал в парсере начального значения PS в /delta
-# async def get_players_last_match_ps(team_dict: dict[str, dict[str, str | int | float]]) -> None:
-#     """
-#     Добавляет во вложеннный словарь пару ключ-значение 'last_match_ps': float
-
-#     Arg: 
-#         team_dict: dict[str, dict[str, str | int | float]] словарь с
-#         пользователями и информацией о них
-    
-#     Return:
-#         None. Изменяется сам словарь (добавляется "last_mathc_ps")
-#     """
-#     try:
-#         for player, player_data in team_dict.items():
-#             omeda_id = player_data['omeda_id']
-
-#             last_match_ps = await get_last_match_ps_from_json(omeda_id)
-#             player_data['last_match_ps'] = last_match_ps
-        
-#         logger.debug(f"get_player_last_match_ps, dict: {team_dict}")
-#         return None
-#     except Exception as e:
-#         logger.error(f"get_player_last_match_ps: {e}")
-#         return None
 
 async def get_last_match_ps_from_json(omeda_id: str) -> float:
     """

@@ -1,17 +1,11 @@
-import os
-import pandas as pd
 import logging
-import sqlite3
+import traceback
 from ps_analitic_tools import Analitic
 
-import aiohttp
-from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
 from users_manager import UsersModel, UsersController
 import ps_parser
 
 
-#logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 uc = UsersController()
 
@@ -21,37 +15,76 @@ async def player_ps_day_db_update():
     """
     
     users_dict = uc.get_users_and_omeda_id()
-    # return dict[name:{'bd_id': int, 'omeda_id':str}] 
     new_ps = await ps_parser.get_players_score_from_api(users_dict)
-    # return {name : {'bd_id': int, 'omeda_id':str, 'player_ps': float}
-
-    #TODO место для записи ps в историю ps
     
     await uc.update_player_ps_day(new_ps)
 
     return None
 
 async def add_player_to_db(player_name: str, omeda_id: str, chat_id: int) -> None:
+    """
+    Добавляет нового игрока в базу данных. +парсит его PS
+
+    Args:
+        player_name (str): Никнейм игрока (макс. 25 символов)
+        omeda_id (str): Omeda ID игрока (макс. 40 символов)
+        chat_id (int): ID чата, к которому привязан игрок
+
+    Returns:
+        None: 
+
+    Raises:
+        ValueError: Если данные не соответствуют ограничениям
+        Exeption: При прочих ошибках при добавлении в БД
+    """
+
     await uc.add_player(player_name, omeda_id, chat_id)
+
     return None
 
 def del_player_from_db(player_name: str, chat_id: int) -> None:
+    """
+    Удаляет игрока из базы данных.
+
+    Args:
+        player_name (str): Имя игрока
+        chat_id (int): ID чата, к которому привязан игрок
+    Returns:
+        None:
+    Raises:
+        Exception: При ошибках во время удаления из БД
+    """
     uc.del_player_from_db(player_name, chat_id)
     return None
     
 
 async def get_player_ps(omeda_id: str) -> float:
+    """
+    Возвращает PS игрока
+
+    Args:
+        omeda_id (str): Omeda ID игрока
+    Returns:
+        float: PS игрока
+    Raises:
+        Exception: При ошибках во время парсинга PS
+    """
     player_ps = await ps_parser.get_player_ps_from_api(omeda_id)
     return player_ps
 
 def get_team(chat_id: int) -> dict:
     """
     Возвращает словарь {name:{omeda_id},}
+
+    Args:
+        chat_id (int): Идентификатор чата.
+    Returns:
+        dict[str, dict[str, str]]: Словарь {name: {omeda_id},}
+    Raises:
+        Exception: Если не удалось импортировать игроков из БД
     """
-    try:
-        return uc.get_users_and_omeda_id(chat_id)
-    except Exception as e:
-        logger.info(f"Проблемы с импортом игроков из БД: {e}")
+    return uc.get_users_and_omeda_id(chat_id)
+
 
 async def get_team_ps(chat_id: int) -> dict:
     """
@@ -71,27 +104,37 @@ async def get_team_ps(chat_id: int) -> dict:
 
     try:
         team_ps_dict = await ps_parser.get_players_score_from_api(team)
+        logger.debug(f"team_ps_dict: {team_ps_dict}")
+        logger.info(f"chat_id: {chat_id}. Получили данные о PS игроков из БД")
         return team_ps_dict
 
     except Exception as e:
-        logger.info(f"Проблемы с парсингом PS: {e}")
+        logger.error(f"Проблемы с парсингом PS: get_team_ps, {e}")
+        logger.error(traceback.format_exc())
         return {'Беда':0}
 
 def sort_players_by_score(team_dict: dict[str, dict[str, str | float]]
 ) -> dict[str, dict[str, str | float]]:
     """
-    Sort dictionary by score. From high to low.
+    Сортирует игроков по PS от большего к меньшему
+
+    Args:
+        team_dict (dict[str, dict[str, str | float]]): Словарь {
+        name: dict{'omeda_id':str, 'player_ps': int}}
+    Returns:
+        dict[str, dict[str, str | float]]: Словарь {
+        name: dict{'omeda_id':str, 'player_ps': int}}
+    Raises:
+        Exception: При ошибках во время сортировки
     """
     try:
         team_dict_sorted_by_ps = (
             {k:v for k,v in sorted(
                 team_dict.items(), key=lambda x: x[1]['player_ps'], reverse=True)
                 }
-            
             )
-
-        logger.debug(f"Sorted scores: {team_dict_sorted_by_ps}")
-        logger.info("Sorting players by score: Success")
+        logger.debug(f"Сортированные значения: {team_dict_sorted_by_ps}")
+        logger.info("Сортировка игроков по PS: Success")
 
         return team_dict_sorted_by_ps
     
@@ -99,55 +142,21 @@ def sort_players_by_score(team_dict: dict[str, dict[str, str | float]]
         logger.debug(f"Сортировка не удалась. Ошибка: {e}")
         return team_dict
 
-def make_score_prety(team_dict: dict[str, dict[str, str | float]]) -> str:
+
+async def get_start_and_end_users_dict_for_delta(chat_id:int
+) -> tuple[dict, dict] | None:
     """
-    Get PS dictionarry and return formatted string with players
-    sorted by score amount.
+    Возвращает словари {name: {omeda_id},} для старых и новых данных
+
+    Args:
+        chat_id (int): Идентификатор чата.
+    Returns:
+        tuple[dict, dict] | None: Словарь {name: {omeda_id},} для старых и новых данных
+    Raises:
+        Exception: При ошибках во время парсинга PS
     """
-    OMEDA_PROFILE_ADRESS = "https://omeda.city/players/"
-    pretty_player_score = ""
-    # players_score = sort_players_by_score(players_score)
-    medals = ("🏆", "🥈", "🥉", "🧑‍🌾", "🧑‍🦯",)
-    medals_counter = 0
-    
-    for player, player_data in team_dict.items():
-        logger.debug(f"MAKE PRETY:\nplayer:{player}, player_data:{player_data}")
-        pretty_ps = f'{player_data['player_ps']:0>6.2f}'
 
-        pretty_player_score += f'\n{pretty_ps} | {medals[medals_counter]} | <a href="{OMEDA_PROFILE_ADRESS}{player_data['omeda_id']}">{player}</a>' 
-        medals_counter += 1                                             
-
-
-    # for player, score in players_score.items():
-    #     # number format xx.x -> 0xx.x0
-    #     pretty_ps_score = f'{score:0>6.2f}'            
-
-    #     pretty_player_score += f"\n{pretty_ps_score} | {medals[medals_counter]} | [{player}]({OMEDA_PROFILE_ADRESS}{player_data['omeda_id']}) "
-    #     medals_counter += 1
-    
-    logger.debug(pretty_player_score)
-    logger.info("Make score pretty: Success")
-
-    return pretty_player_score 
-
-async def players_ps_delta(chat_id:int) -> str | None:
-    """
-    Принимает chat_id
-    Отдаёт отформатированный str ответ для чата, либо None если в БД ps_data 
-    нет пользователей.
-
-    Arg:
-        chat_id: int
-    
-    Return:
-        str - в случае успеха
-        None - если для данного chat_id нет записей в ps_data.db
-    """
-    
     data_from_db = uc.get_users_and_omeda_id(chat_id)
-    #await ps_parser.get_players_last_match_ps(data_from_db)
-    logger.debug(f"pdm, players_ps_delta(), словарь с last_match_ps: {data_from_db}")
-
     if is_chat_users_empty(data_from_db):
         return None
 
@@ -156,7 +165,21 @@ async def players_ps_delta(chat_id:int) -> str | None:
     logger.debug(f"DELTA_START: {data_from_db}")
     logger.debug(f"DELTA_END: {new_data_from_api}")
 
-    delta = Analitic.difference_players_score_records(data_from_db, new_data_from_api)
+    return (data_from_db, new_data_from_api)
+
+async def players_ps_delta(chat_id:int) -> str | None:
+    """
+    Возвращает строку с дельтой PS игроков
+    Args:
+        chat_id (int): Идентификатор чата.
+    Returns:
+        str | None: Строка с дельтой PS игроков
+    Raises:
+        Exception: При ошибках во время парсинга PS и/или в БД
+    """
+    
+    delta = Analitic.difference_players_score_records(
+        *await get_start_and_end_users_dict_for_delta(chat_id))
     
     return delta
 
@@ -200,77 +223,6 @@ def is_chat_users_empty(users_dict: dict) -> bool:
         return True
     else:
         False
-
-
-
-# Всё, что ниже, требует конкретного перелапачивания.
-
-#PLAYERS_FOR_SQL = [k.replace(' ','_') for k in players.PLAYERS_ADRESSES.keys()]
-
-# def convert_ps_to_pd_dataframe(players_score : dict[str, float]) -> pd.DataFrame:
-#     """
-#     Convert Player Score dictionary to pandas DataFrame with three
-#     columns: id, Player, Player Score
-
-#     return: pd.DataFrame
-#     """
-
-#     df = pd.DataFrame(data=players_score, index=[0])
-#     df['date'] = datetime.now().strftime('%Y-%m-%d')
-#     df = df.set_index('date')
-
-#     logger.debug(f"\n{df.to_string()}")
-#     logger.info("Create pandas DataFrame: Success")
-
-#     return df
-
-# def create_sql_database(sql_database : "str" = "ps_data.db") -> None:
-#     """
-#     Write pd.DataFrame object to .sqliete 
-#     """
-#     if os.path.isfile(sql_database):
-#         logger.info(f"SQLite database creating: {sql_database} already exist")
-#     else:
-#         connection = sqlite3.connect(sql_database)
-#         coursor = connection.cursor()
-        
-#         # Create table
-#         coursor.execute(f'''
-#         CREATE TABLE IF NOT EXISTS players_Score (
-#         date TEXT PRIMARY KEY,
-#         {", ".join([f"{player} REAL NOT NULL" 
-#         for player in PLAYERS_FOR_SQL])}
-#         )
-#         ''')
-
-#         # Save table
-#         connection.commit()
-#         logger.info(f"SQLite database {sql_database} creating: Success")
-#         connection.close()
-
-#     return None
-
-
-# def write_df_to_sql_database(dataframe : pd.DataFrame, 
-# sql_database : "str"="ps_data.db",
-# sql_database_table : "str"="players_score") -> None:
-    
-#     if dataframe.empty:
-#         logger.warning("DataFrame is empty. No data written to the database.")
-#     else:
-#         engine = create_engine(f'sqlite:///{sql_database}', echo=False)
-#         try:
-#             dataframe.to_sql(
-#                 sql_database_table, 
-#                 con=engine, 
-#                 index_label="date",
-#                 if_exists='append',)
-
-#             logger.info(f"DataFrame writting to {sql_database}: Succsess")
-#         except sqlalchemy.exc.IntegrityError:
-#             logger.debug(f"write_df_to_sql_database: This date row already exist in {sql_database}")
-
-#     return None
 
 
 if __name__ == '__main__':

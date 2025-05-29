@@ -1,8 +1,8 @@
 import os
 import logging
 import traceback
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 import aiocron
 import asyncio
 from aiogram import Bot, Dispatcher, types ,F
@@ -72,31 +72,13 @@ async def cmd_delta(message: types.Message):
         logger.error(f"Traceback: {traceback.format_exc()}")
         await message.answer("Ошибка дельты PS. Убедитесь, что добавлен хотя бы один игрок")
 
-@dp.message(Command("ps"))
-async def cmd_ps(message: types.Message):
-    """
-    Возвращает таблицу PS для участников чата
-    """
-    try:
-        team_data = await pdm.get_team_ps(message.chat.id)
-        sorted_team_data = pdm.sort_players_by_score(team_data)
-
-        await message.answer(
-            pdm.make_score_prety(sorted_team_data),
-            parse_mode='HTML',
-            disable_web_page_preview=True)
-
-    except Exception as e:
-        logger.error(f"cmd_ps: {e}")
-        await message.answer("Ошибка вывода PS. Убедитесь, что добавлен хотя бы один игрок")
-
 class DelPlayerStates(StatesGroup):
     """
     Класс состояний для этапов удаления игрока
     """
     waiting_for_name = State()
 
-
+# Удаление игрока из БД
 @dp.message(Command("del_player"))
 async def cmd_del_player(message: types.Message, state: FSMContext, bot: Bot):
     """
@@ -116,9 +98,9 @@ async def cmd_del_player(message: types.Message, state: FSMContext, bot: Bot):
     await state.update_data(messages=[msg.message_id])
     await state.set_state(DelPlayerStates.waiting_for_name)    
 
-##################################################
 @dp.message(DelPlayerStates.waiting_for_name)
-async def process_del_player_name(message: types.Message, state: FSMContext, bot: Bot):
+async def process_del_player_name(
+    message: types.Message, state: FSMContext, bot: Bot):
     """
     Обрабатывает никнейм и завершает  процесс удаления игрока.
     """
@@ -130,8 +112,6 @@ async def process_del_player_name(message: types.Message, state: FSMContext, bot
     
     # Удаляем кнопку из предыдущего сообщения
     await remove_inline_buttons(message.chat.id, data['messages'], bot)
-
-    # await state.update_data(player_name=message.text.strip())
     
     player_name = message.text.strip()
     chat_id = data['chat_id']
@@ -151,9 +131,7 @@ async def process_del_player_name(message: types.Message, state: FSMContext, bot
     finally:
         await state.clear()
 
-
-# add_player логика
-# Объявление StatesGroup
+# Добавление игрока в БД
 class AddPlayerStates(StatesGroup):
     """
     Класс состояний для этапов добавления игрока
@@ -164,10 +142,11 @@ class AddPlayerStates(StatesGroup):
 def get_cancel_inline_keyboard():
     """Создает inline-клавиатуру c кнопкой отмены"""
     builder = InlineKeyboardBuilder()
-    builder.button(text="❌ Отмена", callback_data="cancel_add_player")
+    builder.button(text="❌ Отмена", callback_data="cancel_inline_button")
     return builder.as_markup()
 
-@dp.callback_query(F.data == "cancel_add_player")
+
+@dp.callback_query(F.data == "cancel_inline_button")
 async def cancel_add_player_handler(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
     """
     Обработчик отмены операции
@@ -179,7 +158,7 @@ async def cancel_add_player_handler(callback: types.CallbackQuery, state: FSMCon
         await remove_inline_buttons(callback.message.chat.id, data['messages'], bot)
         
         await callback.message.edit_text(
-            "Добавление игрока отменено",
+            "Операция отменена",
             reply_markup=None
         )
         await state.clear()
@@ -237,8 +216,6 @@ async def process_add_player_name(message: types.Message, state: FSMContext, bot
 
     await state.update_data(player_name=message.text.strip())
     
-    
-
     msg = await message.answer(
         "Введите Omeda ID игрока (https://omeda.city/players/{omeda_id}):",
         reply_markup=get_cancel_inline_keyboard()
@@ -276,16 +253,14 @@ async def process_add_player_omeda_id(message: types.Message, state: FSMContext,
         logger.error(f"process_add_player_omeda_id: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         #TODO добавить валидацию на omeda_id и выдать соответсвующую ошибку в чат
-        await message.answer(
-            f"Ошибка при добавлении игрока"
-        )
+        await message.answer("Ошибка при добавлении игрока")
     finally:
         await state.clear()
-
 
 # Запуск процесса поллинга новых апдейтов
 async def main():
     await dp.start_polling(bot)
+
 
 # Тело бота
 if __name__ == "__main__":
