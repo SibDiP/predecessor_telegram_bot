@@ -31,12 +31,12 @@ async def player_ps_day_db_update():
 
     return None
 
-def add_player_to_db(player_name: str, omeda_id: str, chat_id: int):
-    uc.add_player(player_name, omeda_id, chat_id)
+async def add_player_to_db(player_name: str, omeda_id: str, chat_id: int):
+    await uc.add_player(player_name, omeda_id, chat_id)
     return None
 
-def get_player_ps(omeda_id: str) -> float:
-    player_ps = ps_parser.get_player_ps_from_api(omeda_id)
+async def get_player_ps(omeda_id: str) -> float:
+    player_ps = await ps_parser.get_player_ps_from_api(omeda_id)
     return player_ps
 
 def get_team(chat_id: int) -> dict:
@@ -140,7 +140,7 @@ async def players_ps_delta(chat_id:int) -> str | None:
     """
     
     data_from_db = uc.get_users_and_omeda_id(chat_id)
-    await ps_parser.get_players_last_match_ps(data_from_db)
+    #await ps_parser.get_players_last_match_ps(data_from_db)
     logger.debug(f"pdm, players_ps_delta(), словарь с last_match_ps: {data_from_db}")
 
     if is_chat_users_empty(data_from_db):
@@ -165,7 +165,7 @@ async def is_valid_omeda_id(omeda_id:str) -> bool:
     Return: bool 
     """
 
-    if ps_parser.fetch_api_data(omeda_id) is None:
+    if await ps_parser.fetch_api_data(omeda_id) is None:
         return False
     else:
         return True

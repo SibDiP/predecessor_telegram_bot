@@ -205,13 +205,14 @@ async def process_add_player_omeda_id(message: types.Message, state: FSMContext,
 
     try:
         # Ваш метод добавления в БД
-        pdm.add_player_to_db(player_name, omeda_id, chat_id)
+        await pdm.add_player_to_db(player_name, omeda_id, chat_id)
         
         await message.answer(
             f"Игрок {player_name} успешно добавлен в команду!"
         )
     except Exception as e:
         logger.error(f"process_add_player_omeda_id: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         #TODO добавить валидацию на omeda_id и выдать соответсвующую ошибку в чат
         await message.answer(
             f"Ошибка при добавлении игрока"

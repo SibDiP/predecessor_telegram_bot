@@ -7,7 +7,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import sessionmaker, declarative_base
 from threading import Lock
 
-import ps_data_manager as pdm
+import ps_parser
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class UsersController:
 
             self.Session = sessionmaker(bind=self.engine)
 
-    def add_player(self,
+    async def add_player(self,
         name: str, 
         omeda_id: str, 
         chat_id: int): 
@@ -78,7 +78,7 @@ class UsersController:
             ValueError: Если данные не соответствуют ограничениям
             sqlalchemy.exc.SQLAlchemyError: При ошибках БД
         """
-        player_ps = pdm.get_player_ps(omeda_id)
+        player_ps = await ps_parser.get_player_ps_from_api(omeda_id)
 
         # Валидация
         if len(name) > UsersModel.NAME_LEN:
