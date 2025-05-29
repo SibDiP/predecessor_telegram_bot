@@ -1,8 +1,9 @@
 import logging
+import traceback
 import asyncio
 from sqlalchemy import (
     create_engine, Column, BigInteger, Integer, Float, String, Index,
-    select, update, bindparam
+    select, delete, update, bindparam
     )
 from sqlalchemy.orm import sessionmaker, declarative_base
 from threading import Lock
@@ -62,7 +63,7 @@ class UsersController:
     async def add_player(self,
         name: str, 
         omeda_id: str, 
-        chat_id: int): 
+        chat_id: int) -> None: 
         """
         Добавляет нового игрока в базу данных. +парсит его PS
         
@@ -109,6 +110,28 @@ class UsersController:
         finally:
             session.close()
     
+    def del_player_from_db(self, player_name: str, chat_id: int) -> None:
+        """
+        Удаляет игрока из базы данных.
+        """
+        with self.Session() as session:
+            try:
+                stmt = delete(UsersModel).where(
+                    UsersModel.name == player_name, 
+                    UsersModel.chat_id == chat_id
+                    )
+                session.execute(stmt)
+                session.commit()
+
+            except Exception as e:
+                logger.error("Удалить пользователя не удалось")
+                logger.error(e)
+                logger.error(traceback.format_exc())
+                session.rollback()
+                raise e
+
+
+
     def get_users_and_omeda_id(self, chat_id: int = 0
     ) -> dict[str, dict[str, str| int]]:
         """

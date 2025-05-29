@@ -90,6 +90,68 @@ async def cmd_ps(message: types.Message):
         logger.error(f"cmd_ps: {e}")
         await message.answer("Ошибка вывода PS. Убедитесь, что добавлен хотя бы один игрок")
 
+class DelPlayerStates(StatesGroup):
+    """
+    Класс состояний для этапов удаления игрока
+    """
+    waiting_for_name = State()
+
+
+@dp.message(Command("del_player"))
+async def cmd_del_player(message: types.Message, state: FSMContext, bot: Bot):
+    """
+    Удаляет игрока с указанными name + сграбленным chat_id 
+    """
+    await state.update_data(
+        user_id=message.from_user.id,
+        chat_id=message.chat.id,
+        messages=[]
+    )
+
+    msg = await message.answer(
+        "Введите никнейм удаляемого игрока:",
+        reply_markup=get_cancel_inline_keyboard()
+    )
+    
+    await state.update_data(messages=[msg.message_id])
+    await state.set_state(DelPlayerStates.waiting_for_name)    
+
+##################################################
+@dp.message(DelPlayerStates.waiting_for_name)
+async def process_del_player_name(message: types.Message, state: FSMContext, bot: Bot):
+    """
+    Обрабатывает никнейм и завершает  процесс удаления игрока.
+    """
+    data = await state.get_data()
+
+    if message.from_user.id != data['user_id']:
+       await message.answer("Подождите завершения процесса добавления игрока")
+       return
+    
+    # Удаляем кнопку из предыдущего сообщения
+    await remove_inline_buttons(message.chat.id, data['messages'], bot)
+
+    # await state.update_data(player_name=message.text.strip())
+    
+    player_name = message.text.strip()
+    chat_id = data['chat_id']
+
+    try:
+        pdm.del_player_from_db(player_name, chat_id)
+        
+        await message.answer(
+            f"Игрок {player_name} успешно удалён из команды!"
+        )
+
+    except Exception as e:
+        logger.error(f"process_del_player_name: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        await message.answer("Ошибка при удалении игрока")
+
+    finally:
+        await state.clear()
+
+
 # add_player логика
 # Объявление StatesGroup
 class AddPlayerStates(StatesGroup):
@@ -169,11 +231,11 @@ async def process_add_player_name(message: types.Message, state: FSMContext, bot
     # Удаляем кнопку из предыдущего сообщения
     await remove_inline_buttons(message.chat.id, data['messages'], bot)
     
-    if not pdm.is_valid_name(message.text):
+    if not pdm.is_valid_name(message.text.strip()):
         await message.answer("Никнейм может содержать не более 25 символов")
         return
 
-    await state.update_data(player_name=message.text)
+    await state.update_data(player_name=message.text.strip())
     
     
 
@@ -200,7 +262,7 @@ async def process_add_player_omeda_id(message: types.Message, state: FSMContext,
     await remove_inline_buttons(message.chat.id, data['messages'], bot)
     
     player_name = data['player_name']
-    omeda_id = message.text
+    omeda_id = message.text.strip()
     chat_id = data['chat_id']
 
     try:

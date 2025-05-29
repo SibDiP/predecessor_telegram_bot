@@ -31,9 +31,14 @@ async def player_ps_day_db_update():
 
     return None
 
-async def add_player_to_db(player_name: str, omeda_id: str, chat_id: int):
+async def add_player_to_db(player_name: str, omeda_id: str, chat_id: int) -> None:
     await uc.add_player(player_name, omeda_id, chat_id)
     return None
+
+def del_player_from_db(player_name: str, chat_id: int) -> None:
+    uc.del_player_from_db(player_name, chat_id)
+    return None
+    
 
 async def get_player_ps(omeda_id: str) -> float:
     player_ps = await ps_parser.get_player_ps_from_api(omeda_id)
