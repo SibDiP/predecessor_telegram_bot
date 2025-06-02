@@ -31,34 +31,37 @@ class UsersModel(Base):
     )
 
 
-
 # Контроллер для CRD пользователей в БД
 class UsersController:
+    #Тут храним единственный инстанс класса
     _instance = None
+    #Блокировка для создания синглтона
     _lock = Lock()
-
+    
     def __new__(cls):
-
         """
         Проверка на существование объекта класса и создание синглтона
         """
+        #болокируем доступп к созданию объекта, чтобы не было одновременного 
+        #создания нескольких объектов
         with cls._lock:
+            #если объект еще не создан, то создаем его
             if not cls._instance:
+                #создаем объект класса через базовый класс object, 
+                #что б не словить рекурсию
                 cls._instance = super().__new__(cls)
+
         return cls._instance
 
     def __init__(self):
         """
         Создание базы данных и sessionmaker
         """
-        if not hasattr(self,'_initialized'):
-            self._initialized = True
-    
-            self.engine = create_engine('sqlite:///ps_data.db')
-            Base.metadata.create_all(self.engine)
-            logger.info("Users base creation: Success")
-
-            self.Session = sessionmaker(bind=self.engine)
+        
+        self.engine = create_engine('sqlite:///ps_data.db')
+        Base.metadata.create_all(self.engine)
+        logger.info("Users base creation: Success")
+        self.Session = sessionmaker(bind=self.engine)
 
     async def add_player(self,
         name: str, 
