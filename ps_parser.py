@@ -6,7 +6,6 @@ import logging
 import traceback
 
 
-#logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 requests.adapters.DEFAULT_TIMEOUT = 10
 
@@ -21,14 +20,19 @@ async def fetch_api_data(omeda_id: str, target_json: str = "s"
     Arg:
         omeda_id: str. Идентификатор игрока
         json: str. "s" - /statistics.json, "m" - /matches.json
-    
+
     Return:
         dict json-ответ от API.
+        
+    Raises:
+        aiohttp.ClierntResposeError ответ сервера отличен от 200
+        aiohttp.aiohttp.ClientError при ошибках соединения
+        aiohttp.TimeoutError при превышении таймаута
+        Exeption: При прочих ошибках при получении данных
     """
     API_ENDPOINTS = {
         's': "/statistics.json",
         'm': "/matches.json?per_page=1",
-        # "i": "/items.json",
     }
     url = f"{BASE_OMEDA_ADRESS}{omeda_id}{API_ENDPOINTS[target_json]}"
 
@@ -40,22 +44,50 @@ async def fetch_api_data(omeda_id: str, target_json: str = "s"
                 logger.debug(f"Response status: {response.status}")
                 logger.debug(f"Response content: {response.content}")
 
-
                 if response.status == 200:
                     logger.info(f"Get API response for {omeda_id}: Success")
                     return await response.json()
 
                 logger.error(f"Data extraction: API/GET erorr {response.status_code}, URL:{url}") 
                 #None - используется для обработки ошибок и ответа пользователю в чате  
-                return None
+                raise aiohttp.ClientResponseError(response.status)
+
+    except aiohttp.ClientResponseError as e:
+        logger.error(f"Получение данных, статус ответа не 200: API/GET erorr {e}")
+        logger.error(traceback.format_exc())
+        raise
+
+    except aiohttp.ClientError as e:
+        logger.error(f"Получение данных: API/GET erorr {e}")
+        logger.error(traceback.format_exc())
+        raise
+    
+    except aiohttp.TimeoutError as e:
+        logger.error(f"Получение данных, время timeout превышено: API/GET erorr {e}")
+        logger.error(traceback.format_exc())
+        raise
 
     except Exception as e:
         logger.error(f"Ошибка парсинга: {e}")
         logger.error(traceback.format_exc())
-        raise e
-        return None
+        raise
     
 async def get_player_ps_from_api(omeda_id: str) -> float:
+    """
+    Получение среднего значения ps для игрока из API.
+
+    Args:
+        omeda_id: str. Идентификатор игрока
+
+    Returns:
+        float: Среднее значение ps игрока.
+    
+    Raises:
+        aiohttp.ClierntResposeError ответ сервера отличен от 200
+        aiohttp.aiohttp.ClientError при ошибках соединения
+        aiohttp.TimeoutError при превышении таймаута
+        Exeption: При прочих ошибках при получении данных
+    """
     response = await fetch_api_data(omeda_id)
     api_data = response 
     player_ps = round(api_data[DATA_FOR_EXTRACTION], 2)
@@ -74,6 +106,14 @@ async def get_players_score_from_api(
 
     Returns:
         dict: {name : {'omeda_id':str, 'player_ps': float}}.
+
+    Raises:
+            KeyError: Если ключ не найден в словаре (обрабатывается локально)
+
+            aiohttp.ClierntResposeError ответ сервера отличен от 200
+            aiohttp.aiohttp.ClientError при ошибках соединения
+            aiohttp.TimeoutError при превышении таймаута
+            Exeption: При прочих ошибках при получении данных
     """
     # Создаём список задач для асинхронного выполнения
     tasks = []
@@ -100,44 +140,11 @@ async def get_players_score_from_api(
             users_dict[player]['player_ps'] = 0
 
     logger.debug(f"Team_dict(get_players_score_from_api()): {users_dict}")
-    logger.info("Data Parsing: Success")
+    logger.info("Парсинг информации из API: Success")
 
     return users_dict
-
-async def get_last_match_ps_from_json(omeda_id: str) -> float:
-    """
-    Возвращает last_match_ps для перерданного omeda_id
-
-    Arg:
-        omeda_id: str
-    
-    Return:
-        last_match_ps: float
-    """
-    
-    response = await fetch_api_data(omeda_id, "m")
-    api_data = response.json()
-    logger.debug(f"get_last_match_ps_from_json, api_data: {api_data}")
-
-    try:
-        for match in api_data.get('matches', []):
-            for player in match.get('players', []):
-                if player.get('id') == omeda_id:
-                    last_game_performance_score = round(
-                        player.get('performance_score'), 2)
-                    logger.debug(f"{get_last_match_ps_from_json.__name__} last_game_performance_score: {last_game_performance_score}")
-                    return last_game_performance_score
-                
-    except Exception as e:
-        logger.error(f"{get_last_match_ps_from_json.__name__} ошибка!: {e}")
-        last_game_performance_score = 0
-        return last_game_performance_score
         
-
 def main():
-    #schedule_every_day()
-    #Analitic.players_score_recorder_start(get_players_score_from_api())
-    #get_players_score_from_api()
     pass
 
 

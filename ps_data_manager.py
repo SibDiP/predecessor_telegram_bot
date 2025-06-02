@@ -58,20 +58,6 @@ def del_player_from_db(player_name: str, chat_id: int) -> None:
     return None
     
 
-async def get_player_ps(omeda_id: str) -> float:
-    """
-    Возвращает PS игрока
-
-    Args:
-        omeda_id (str): Omeda ID игрока
-    Returns:
-        float: PS игрока
-    Raises:
-        Exception: При ошибках во время парсинга PS
-    """
-    player_ps = await ps_parser.get_player_ps_from_api(omeda_id)
-    return player_ps
-
 def get_team(chat_id: int) -> dict:
     """
     Возвращает словарь {name:{omeda_id},}

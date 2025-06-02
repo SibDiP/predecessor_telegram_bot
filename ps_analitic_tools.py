@@ -1,10 +1,8 @@
-from typing import Optional
 import logging
 import traceback
 
 import ps_parser
 
-#logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class Analitic:
@@ -20,7 +18,7 @@ class Analitic:
         up_down_neutral_emoji = ("🟢","🔴","🟡")
         compare_index : int = None
         compare_difference : float = None
-        BASE_OMEDA_ADRESS = "https://omeda.city/players/"
+        #BASE_OMEDA_ADRESS = "https://omeda.city/players/"
 
         # loop through Analitic.players_score_end
         for player, player_data in data_end.items():
@@ -48,7 +46,7 @@ class Analitic:
                 f"{next_ps:0>6.2f} | " +
                 f"{up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | " +
                 f"{last_match_ps:0>6.2f} | " +
-                f'''<a href="{BASE_OMEDA_ADRESS}{player_data['omeda_id']}">{player[:13]}</a>\n'''
+                f'''<a href="{ps_parser.BASE_OMEDA_ADRESS}{player_data['omeda_id']}">{player[:13]}</a>\n'''
                 )
         return  result_string
 
