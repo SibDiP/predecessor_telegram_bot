@@ -50,24 +50,6 @@ class Analitic:
                 )
         return  result_string
 
-def make_score_prety(players_score : dict[str, float]) -> str:
-    prety_player_score = ""
-    players_score = ps_parser.sort_players_by_score(players_score)
-    medals = ("🏆", "🥈", "🥉", "🧑‍🌾", "🧑‍🦯",)
-    medals_counter = 0
-
-    for player, score in players_score.items():
-        if score < 100:
-            score = "".join(("0", str(score)))
-
-        prety_player_score += f"\n{score} | {medals[medals_counter]} | {player}"
-        medals_counter += 1
-    
-    logger.debug(prety_player_score)
-    logger.info("Make score pretty: Success")
-
-    return prety_player_score 
-
 def main():
     pass
 
