@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from threading import Lock
 from sqlalchemy.orm.exc import NoResultFound
 
-import ps_parser
+import utils.ps_parser as ps_parser
 
 logger = logging.getLogger(__name__)
 

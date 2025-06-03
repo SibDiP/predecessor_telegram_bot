@@ -1,8 +1,7 @@
 import logging
 import traceback
 
-import ps_parser
-
+import utils.ps_parser as ps_parser
 logger = logging.getLogger(__name__)
 
 class Analitic:

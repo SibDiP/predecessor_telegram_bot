@@ -1,9 +1,9 @@
 import logging
 import traceback
-from ps_analitic_tools import Analitic
 
-from users_manager import UsersModel, UsersController
-import ps_parser
+from utils.ps_analitic_tools import Analitic
+from utils.users_manager import UsersModel, UsersController
+import utils.ps_parser as ps_parser
 
 
 logger = logging.getLogger(__name__)

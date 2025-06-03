@@ -13,8 +13,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.orm.exc import NoResultFound
 from aiogram.enums import ParseMode 
 
-
-import ps_data_manager as pdm
+import utils.ps_data_manager as pdm
 
 
 load_dotenv()
