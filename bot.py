@@ -10,6 +10,9 @@ from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from sqlalchemy.orm.exc import NoResultFound
+from aiogram.enums import ParseMode 
+
 
 import ps_data_manager as pdm
 
@@ -64,7 +67,7 @@ async def cmd_delta(message: types.Message):
             return
 
         await message.answer((delta_data),
-        parse_mode='HTML',
+        parse_mode=ParseMode.HTML,
         disable_web_page_preview=True)
     
     except Exception as e:
@@ -102,7 +105,7 @@ async def cmd_del_player(message: types.Message, state: FSMContext, bot: Bot):
 async def process_del_player_name(
     message: types.Message, state: FSMContext, bot: Bot):
     """
-    Обрабатывает никнейм и завершает  процесс удаления игрока.
+    Обрабатывает никнейм и завершает процесс удаления игрока.
     """
     data = await state.get_data()
 
@@ -121,6 +124,11 @@ async def process_del_player_name(
         
         await message.answer(
             f"Игрок {player_name} успешно удалён из команды!"
+        )
+
+    except NoResultFound:
+        await message.answer(
+            f"Игрок {player_name} не найден в базе данных"
         )
 
     except Exception as e:

@@ -7,6 +7,7 @@ from sqlalchemy import (
     )
 from sqlalchemy.orm import sessionmaker, declarative_base
 from threading import Lock
+from sqlalchemy.orm.exc import NoResultFound
 
 import ps_parser
 
@@ -33,6 +34,9 @@ class UsersModel(Base):
 
 # Контроллер для CRD пользователей в БД
 class UsersController:
+    """
+    Класс для работы с пользователями в БД.
+    """
     #Тут храним единственный инстанс класса
     _instance = None
     #Блокировка для создания синглтона
@@ -57,7 +61,7 @@ class UsersController:
         """
         Создание базы данных и sessionmaker
         """
-        
+
         self.engine = create_engine('sqlite:///ps_data.db')
         Base.metadata.create_all(self.engine)
         logger.info("Users base creation: Success")
@@ -80,7 +84,11 @@ class UsersController:
             
         Raises:
             ValueError: Если данные не соответствуют ограничениям
-            sqlalchemy.exc.SQLAlchemyError: При ошибках БД
+            Exeption: При прочих ошибках при добавлении в БД
+            
+            aiohttp.ClientError при ошибках соединения (fetch_api_data)
+            aiohttp.ClientResponseError ответ сервера отличен от 200 (fetch_api_data)
+            aiohttp.TimeoutError при превышении таймаута (fetch_api_data)
         """
         player_ps = await ps_parser.get_player_ps_from_api(omeda_id)
 
@@ -89,10 +97,9 @@ class UsersController:
             raise ValueError(f"Имя должно быть не более {UsersModel.NAME_LEN} символов")
         if len(omeda_id) > UsersModel.OMEDA_ID_LEN:
             raise ValueError(f"Omeda_id должен быть не более {UsersModel.OMEDA_ID_LEN} символов")
-        
-       
        
         session = self.Session()
+
         try:
             new_user = UsersModel(
                 name=name,
@@ -107,15 +114,27 @@ class UsersController:
             return new_user
 
         except Exception as e:
-            logger.info("Добавить пользователя не удалось")
+            logger.error("Добавить пользователя в базу данных не удалось")
             session.rollback()
-            raise e
+            raise
+
         finally:
             session.close()
     
-    def del_player_from_db(self, player_name: str, chat_id: int) -> None:
+    def del_player_from_db(self, 
+        player_name: str, 
+        chat_id: int) -> None:
         """
         Удаляет игрока из базы данных.
+
+        Args:
+            player_name (str): Имя игрока
+            chat_id (int): ID чата, к которому привязан игрок
+        Returns:
+            None:
+        Raises:
+            ValueError: Если данные не соответствуют ограничениям
+            Exeption: При прочих ошибках при удалении из БД
         """
         with self.Session() as session:
             try:
@@ -123,15 +142,18 @@ class UsersController:
                     UsersModel.name == player_name, 
                     UsersModel.chat_id == chat_id
                     )
-                session.execute(stmt)
-                session.commit()
+                result = session.execute(stmt)
+                session.commit()           
 
             except Exception as e:
-                logger.error("Удалить пользователя не удалось")
-                logger.error(e)
+                logger.error(f"Удалить пользователя не удалось: {e}")
                 logger.error(traceback.format_exc())
                 session.rollback()
-                raise e
+                raise
+
+            if result.rowcount == 0:
+                logger.error("Пользователь не найден")
+                raise NoResultFound("Пользователь не найден")
 
     def get_users_and_omeda_id(self, chat_id: int = 0
     ) -> dict[str, dict[str, str| int]]:
@@ -144,7 +166,7 @@ class UsersController:
 
         Returns:
             dict[str, dict[str, str| int]]: Словарь, где ключом является имя 
-            пользователя, а значением — словарь с 
+            пользователя, а значением — словарь со следующими ключами:
             bd_id(в БД)
             Omeda ID пользователя
             player_ps_day
@@ -161,6 +183,7 @@ class UsersController:
                     UsersModel.id,
                     UsersModel.player_ps_day
                 )
+
                 if chat_id != 0:
                     stmt = stmt.where(UsersModel.chat_id == chat_id)
             
@@ -172,22 +195,29 @@ class UsersController:
                         'omeda_id': user.omeda_id, 
                         'player_ps_day': user.player_ps_day
                         } for user in users}
+
                 logger.debug(f"Team dict: {team_dict}")
                 logger.info(f"chat_id: {chat_id}. Получили данные пользователей из БД")
+
                 return team_dict
 
             except Exception as e:
                 logger.error("Не удалось получть данные пользователей из БД")
-                raise e
+                logger.error(traceback.format_exc())
+                raise
 
-   
-    async def update_player_ps_day(self, users_dict: 
-        dict[str, dict[str, int | float]]):
+    def _make_users_to_update_list(self,
+    users_dict: dict[str, dict[str, int | float]]
+    ) -> list[dict[str, int | float]]:
         """
-        Заменяем значения столбца player_ps_day в БД ps_data.db
-        Вид принимаемого аргумента - name : {'bd_id':int, 'player_ps': float}
+        Создает словарь для обновления данных в БД
+
+        Args:
+            users_dict (dict[str, dict[str, int | float]]): Словарь пользователей
+
+        Returns:
+            list[dict[str, int | float]]: Список словарей для обновления данных в БД
         """
-        #TODO вынести в отдельную функцию
         users_to_update = [
             {
                 'id': user_data['bd_id'],
@@ -195,7 +225,18 @@ class UsersController:
             }
             for user_data in users_dict.values()
         ]
+
         logger.debug(f"users_to_update: {users_to_update}")
+
+        return users_to_update
+
+    async def update_player_ps_day(self, 
+    users_dict: dict[str, dict[str, int | float]]):
+        """
+        Заменяем значения столбца player_ps_day в БД ps_data.db
+        Вид принимаемого аргумента - name : {'bd_id':int, 'player_ps': float}
+        """
+        users_to_update = self._make_users_to_update_list(users_dict)
 
         with self.Session() as session:
             try:
@@ -211,33 +252,13 @@ class UsersController:
             except Exception as e:
                 session.rollback()
                 logger.error(f"Обновление player_ps_day не удалось. Exception: {e}")
+                raise
         
-        return
-               
-class Player:
-    def __init__(self, name, omeda_id):
-        self.name = name
-        self.omeda_id
+        return None
+
+def __main__():
+    pass
 
 
-
-
-
-
-
-
-
-
-
-
-
-# Legacy
-
-# Traced players. {nik_name : id}
-PLAYERS_ADRESSES = {
-    "evvec" : "d6f5c363-6550-4af2-a84e-2d8e68e0010b",
-    "good boy 69 69" : "eaacae21-0d28-4611-beb4-815bbc191d38",
-    "PowerSobaka9000" : "d721a45e-c57a-4b8e-b866-8179d1365dfa",
-    "sibdip" : "22721c84-9d9e-4bdc-a6d6-758806afa0b1",
-    "styxara" : "304a359b-2329-4ea7-8007-095e292f382e",
-    }
+if __name__ == "__main__":
+    __main__()

@@ -6,30 +6,43 @@ import ps_parser
 logger = logging.getLogger(__name__)
 
 class Analitic:
-
+    """
+    Класс для аналитики данных и рссчёта разницы в PS.
+    """
 
     @staticmethod
     def difference_players_score_records(
         data_start: dict[str, dict[str, str| int |float]],
         data_end: dict[str, dict[str, str| int |float]],
     ) -> str:
+        """
+        Сравнивает данные о PS игроков и выдаёт строку с результатами.
 
-        result_string = ""
+        Args:
+            data_start (dict[str, dict[str, str| int |float]]): Словарь с данными о PS игроков в БД (обновляется автоматически раз в день).
+            data_end (dict[str, dict[str, str| int |float]]): Словарь с актуальными (на момент вызова) данными о PS игроков.
+
+        Returns:
+            str: Строка с результатами сравнения.
+        """
+        
+        result_string = (f"<u>#{'avg':^7}|{'delta':^13}|{'last':^11}|{'nick':^10}#</u>\n")
+
         up_down_neutral_emoji = ("🟢","🔴","🟡")
         compare_index : int = None
         compare_difference : float = None
-        #BASE_OMEDA_ADRESS = "https://omeda.city/players/"
 
-        # loop through Analitic.players_score_end
         for player, player_data in data_end.items():
             
             try:
                 current_ps = data_start[player]['player_ps_day']
                 next_ps = player_data['player_ps_day']
                 last_match_ps = player_data['player_ps']
+
             except Exception as e:
                 logger.error(f"difference_players_score_records: {e}")
                 logger.error(traceback.format_exc())
+                raise
             
             compare_difference = abs(next_ps - current_ps)
 
@@ -40,8 +53,6 @@ class Analitic:
             elif next_ps == current_ps:
                 compare_index = 2
 
-
-            #formatted_str = f"{number:06.2f}"
             result_string += (
                 f"{next_ps:0>6.2f} | " +
                 f"{up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | " +

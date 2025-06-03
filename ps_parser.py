@@ -83,10 +83,10 @@ async def get_player_ps_from_api(omeda_id: str) -> float:
         float: Среднее значение ps игрока.
     
     Raises:
-        aiohttp.ClierntResposeError ответ сервера отличен от 200
-        aiohttp.aiohttp.ClientError при ошибках соединения
-        aiohttp.TimeoutError при превышении таймаута
-        Exeption: При прочих ошибках при получении данных
+        aiohttp.ClierntResposeError ответ сервера отличен от 200 (fetch_api_data)
+        aiohttp.aiohttp.ClientError при ошибках соединения (fetch_api_data)
+        aiohttp.TimeoutError при превышении таймаута (fetch_api_data)
+        Exeption: При прочих ошибках при получении данных (fetch_api_data)
     """
     response = await fetch_api_data(omeda_id)
     api_data = response 
