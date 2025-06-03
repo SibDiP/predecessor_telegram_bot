@@ -56,7 +56,7 @@ class Analitic:
                 f"{next_ps:0>6.2f} | " +
                 f"{up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | " +
                 f"{last_match_ps:0>6.2f} | " +
-                f'''<a href="{ps_parser.BASE_OMEDA_ADRESS}{player_data['omeda_id']}">{player[:13]}</a>\n'''
+                f'''<a href="{ps_parser.BASE_OMEDA_ADRESS}{player_data['omeda_id']}">{player[:9]}</a>\n'''
                 )
         return  result_string
 
