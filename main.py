@@ -127,7 +127,7 @@ async def process_del_player_name(
 
     except NoResultFound:
         await message.answer(
-            f"Игрок {player_name} не найден в базе данных"
+            f"Игрок {player_name} не найден в базе"
         )
 
     except Exception as e:
