@@ -15,7 +15,10 @@ async def player_ps_day_db_update():
     """
     
     users_dict = uc.get_users_and_omeda_id()
-    new_ps = await ps_parser.get_players_score_from_api(users_dict)
+    new_ps = await ps_parser.get_players_score_from_api(
+        users_dict,
+        last_match_ps=False
+        )
     
     await uc.update_player_ps_day(new_ps)
 
