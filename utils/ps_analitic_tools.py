@@ -36,7 +36,7 @@ class Analitic:
             try:
                 current_ps = data_start[player]['player_ps_day']
                 next_ps = player_data['player_ps_day']
-                last_match_ps = player_data['player_ps']
+                last_match_ps = player_data['last_match_ps']
 
             except Exception as e:
                 logger.error(f"difference_players_score_records: {e}")
