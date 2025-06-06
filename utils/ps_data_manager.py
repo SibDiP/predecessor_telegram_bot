@@ -1,3 +1,17 @@
+"""
+Модуль-агрегатор утилит для управления данными performance scores (PS) 
+игроков.
+
+Этот модуль предоставляет функции для работы с данными игроков, включая:
+    Обновление performance scores игроков в базе данных
+    Добавление и удаление игроков из базы данных
+    Получение информации о команде и performance scores
+    Анализ изменений performance scores игроков
+
+Модуль обрабатывает парсинг данных игроков из внешнего API, управление 
+записями пользователей и выполнение различных аналитических операций 
+с performance scores игроков.
+"""
 import logging
 import traceback
 
@@ -40,8 +54,8 @@ async def add_player_to_db(player_name: str, omeda_id: str, chat_id: int) -> Non
         ValueError: Если данные не соответствуют ограничениям
         Exeption: При прочих ошибках при добавлении в БД
     """
-
-    await uc.add_player(player_name, omeda_id, chat_id)
+    player_ps = await ps_parser.get_player_ps_from_api(omeda_id)
+    await uc.add_player(player_name, omeda_id, chat_id, player_ps)
 
     return None
 

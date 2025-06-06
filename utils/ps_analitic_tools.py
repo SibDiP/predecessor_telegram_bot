@@ -1,3 +1,17 @@
+"""
+Аналитический инструмент для сравнения performance scores (PS) игроков 
+в различные временные периоды.
+
+Этот модуль предоставляет функциональность для анализа и расчета разницы 
+в performance scores игроков, генерируя отчет сравнения с визуальными 
+индикаторами изменений показателей.
+
+Основные возможности:
+    Сравнивает performance scores игроков между начальным и текущим наборами данных
+    Формирует строку с разницей показателей и ссылками на игроков
+    Использует эмодзи-индикаторы для отображения динамики изменений (зеленый/красный/желтый)
+"""
+
 import logging
 import traceback
 
@@ -15,14 +29,24 @@ class Analitic:
         data_end: dict[str, dict[str, str| int |float]],
     ) -> str:
         """
-        Сравнивает данные о PS игроков и выдаёт строку с результатами.
+        Сравнивает записи performance scores (PS) игроков и генерирует форматированную строку с результатами.
+
+        Вычисляет разницу в performance scores игроков между двумя временными точками
+        и создает форматированную строку с деталями, включая:
+            Средний показатель эффективности
+            Изменение показателя
+            Результат последнего матча
+            Никнейм игрока со ссылкой на его профиль
 
         Args:
-            data_start (dict[str, dict[str, str| int |float]]): Словарь с данными о PS игроков в БД (обновляется автоматически раз в день).
-            data_end (dict[str, dict[str, str| int |float]]): Словарь с актуальными (на момент вызова) данными о PS игроков.
+            data_start (dict[str, dict[str, str| int |float]]): Начальные данные PS игроков из базы данных
+            data_end (dict[str, dict[str, str| int |float]]): Текущие данные PS игроков
 
         Returns:
-            str: Строка с результатами сравнения.
+            str: Форматированная строка с результатами сравнения performance scores игроков
+
+        Raises:
+            Exception: При возникновении проблем с доступом к данным игроков
         """
         
         result_string = (f"<u>#{'avg':^7}|{'delta':^13}|{'last':^11}|{'nick':^10}#</u>\n")
@@ -53,10 +77,10 @@ class Analitic:
                 compare_index = 2
 
             result_string += (
-                f"{next_ps:0>6.2f} | " +
+                f"{current_ps:0>6.2f} | " +
                 f"{up_down_neutral_emoji[compare_index]} {compare_difference:0>4.2f} | " +
                 f"{last_match_ps:0>6.2f} | " +
-                f'''<a href="{ps_parser.BASE_OMEDA_ADRESS}{player_data['omeda_id']}">{player[:9]}</a>\n'''
+                f'''<a href="{ps_parser.BASE_OMEDA_ADRESS}{player_data['omeda_id']}">{player[:7]}</a>\n'''
                 )
         return  result_string
 

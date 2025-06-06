@@ -1,3 +1,19 @@
+"""
+Управляет пользовательскими данными в базе SQLite с использованием SQLAlchemy ORM.
+
+Этот класс реализует шаблон Singleton для операций с базой данных, связанных с пользователями,
+и предоставляет методы для добавления, удаления, получения и обновления информации о пользователях.
+
+Ключевые особенности:
+    Потокобезопасная реализация Singleton
+    Операции создания, чтения и удаления записей пользователей
+    Поддержка хранения данных пользователя: имя, Omeda ID, ID чата и показатели эффективности
+    Логирование и обработка ошибок при работе с базой данных
+
+Атрибуты:
+_instance (UsersController): Единственный экземпляр класса (Singleton)
+_lock (threading.Lock): Блокировка для синхронизации потоков при создании Singleton
+"""
 import logging
 import traceback
 
@@ -9,7 +25,6 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from threading import Lock
 from sqlalchemy.orm.exc import NoResultFound
 
-import utils.ps_parser as ps_parser
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +85,8 @@ class UsersController:
     async def add_player(self,
         name: str, 
         omeda_id: str, 
-        chat_id: int) -> None: 
+        chat_id: int,
+        player_ps: float) -> None: 
         """
         Добавляет нового игрока в базу данных. +парсит его PS
         
@@ -78,6 +94,7 @@ class UsersController:
             name (str): Никнейм игрока (макс. 25 символов)
             omeda_id (str): Omeda ID игрока (макс. 40 символов)
             chat_id (int): ID чата, к которому привязан игрок
+            player_ps (float): PS игрока
             
         Returns:
             Users: Созданный объект пользователя
@@ -90,7 +107,6 @@ class UsersController:
             aiohttp.ClientResponseError ответ сервера отличен от 200 (fetch_api_data)
             aiohttp.TimeoutError при превышении таймаута (fetch_api_data)
         """
-        player_ps = await ps_parser.get_player_ps_from_api(omeda_id)
 
         # Валидация
         if len(name) > UsersModel.NAME_LEN:
@@ -114,7 +130,7 @@ class UsersController:
             return new_user
 
         except Exception as e:
-            logger.error("Добавить пользователя в базу данных не удалось")
+            logger.error(f"Добавить пользователя в базу данных не удалось: {e}")
             session.rollback()
             raise
 
@@ -202,7 +218,7 @@ class UsersController:
                 return team_dict
 
             except Exception as e:
-                logger.error("Не удалось получть данные пользователей из БД")
+                logger.error(f"Не удалось получть данные пользователей из БД: {e}")
                 logger.error(traceback.format_exc())
                 raise
 

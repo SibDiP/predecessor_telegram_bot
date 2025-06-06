@@ -8,6 +8,13 @@ dependencies = [
     "aiocron>=2.1",
     "aiogram>=3.20.0.post0",
     "dotenv>=0.9.9",
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-mock>=3.14.1",
     "requests>=2.32.3",
     "sqlalchemy>=2.0.41",
 ]
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "session"
+testpaths = [ "tests" ]
+pythonpath = [ "." ]

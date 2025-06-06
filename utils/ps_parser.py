@@ -1,3 +1,18 @@
+"""
+Асинхронное получение и парсинг performance scores игроков из API Omeda.
+
+Этот модуль предоставляет функции для получения статистики игроков и performance scores
+матчей с использованием асинхронных HTTP-запросов. Поддерживается получение средних
+performance scores и scores последнего матча для нескольких игроков.
+
+Ключевые функции:
+    fetch_api_data: Получает JSON-данные из API Omeda для конкретного игрока
+    get_player_ps_from_api: Извлекает средний performance score игрока
+    get_players_score_from_api: Асинхронно получает performance scores для нескольких игроков
+    get_last_match_ps_from_json: Извлекает performance score из последнего матча
+
+Вызывает различные исключения, связанные с запросами к API, включая ошибки соединения и таймауты.
+"""
 import requests
 
 import asyncio
@@ -41,9 +56,7 @@ async def fetch_api_data(omeda_id: str, target_json: str = "s"
             async with session.get(url) as response:
                 logger.debug(f"Response URL: {url}")
                 logger.debug(f"Response status type: {type(response.status)}")
-                #logger.debug(f"Full response: {await response.text()}")
                 logger.debug(f"Response status: {response.status}")
-                #logger.debug(f"Response content: {response.content}")
 
                 if response.status == 200:
                     logger.info(f"Get API response for {omeda_id}: Success")
@@ -59,11 +72,9 @@ async def get_player_ps_from_api(omeda_id: str) -> float:
     Получение среднего значения ps для игрока из API.
 
     Args:
-        omeda_id: str. Идентификатор игрока
-
+        omeda_id: str. Идентификатор игрок
     Returns:
         float: Среднее значение ps игрока.
-    
     Raises:
         Exeption: При прочих ошибках при получении данных (fetch_api_data)
     """
