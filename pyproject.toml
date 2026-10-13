@@ -11,7 +11,6 @@ dependencies = [
     "pytest>=8.4.0",
     "pytest-asyncio>=1.0.0",
     "pytest-mock>=3.14.1",
-    "requests>=2.32.3",
     "sqlalchemy>=2.0.41",
 ]
 [tool.pytest.ini_options]

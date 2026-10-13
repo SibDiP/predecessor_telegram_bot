@@ -13,8 +13,6 @@ performance scores и scores последнего матча для нескол
 
 Вызывает различные исключения, связанные с запросами к API, включая ошибки соединения и таймауты.
 """
-import requests
-
 import asyncio
 import aiohttp
 import logging
@@ -22,7 +20,6 @@ import traceback
 
 
 logger = logging.getLogger(__name__)
-requests.adapters.DEFAULT_TIMEOUT = 10
 
 BASE_OMEDA_ADRESS = "https://omeda.city/players/"
 DATA_FOR_EXTRACTION = "avg_performance_score"
@@ -52,7 +49,8 @@ async def fetch_api_data(omeda_id: str, target_json: str = "s"
     url = f"{BASE_OMEDA_ADRESS}{omeda_id}{API_ENDPOINTS[target_json]}"
 
     try:
-        async with aiohttp.ClientSession() as session:
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url) as response:
                 logger.debug(f"Response URL: {url}")
                 logger.debug(f"Response status type: {type(response.status)}")
