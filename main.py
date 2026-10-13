@@ -57,7 +57,7 @@ dp = Dispatcher()
 # колбэк, инлайн-запрос, платёж, добавление 
 # бота в группу и т.д. 
 
-@aiocron.crontab('* 4 * * *')
+@aiocron.crontab('0 4 * * *')
 async def daily_update():
     """
     Ежедневный апдейт значений player_ps_day в ps_data.db
